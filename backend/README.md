@@ -43,6 +43,25 @@ cp src/main/resources/application-local.yml.example src/main/resources/applicati
 
 按需修改 `application-local.yml`，该文件已被根 `.gitignore` 忽略。
 
-> M0 为保证空骨架无需本地数据库即可启动，入口类暂时排除了 `DataSourceAutoConfiguration`。后续接入真实 Mapper / 数据库时移除该排除并启用本地配置。
+M1 已接入 MySQL / Redis / JWT。启动前需要按 `../docs/db-schema.sql` 创建库表，或先执行：
+
+```bash
+mysql -u dream -p dream < src/main/resources/db/schema.sql
+```
+
+本地无微信小程序密钥时，可在 `application-local.yml` 设置 `dream.wx.mock-enabled: true`，再用 mock code 联调：
+
+```bash
+curl -X POST http://localhost:8080/api/auth/wxLogin \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"mock:local-user"}'
+```
+
+受保护接口需要携带 JWT：
+
+```bash
+curl http://localhost:8080/api/user/me \
+  -H 'Authorization: Bearer <token>'
+```
 
 参见 `../docs/architecture.md`、`../docs/api-contract.md`、`../docs/db-schema.sql`。

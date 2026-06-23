@@ -13,6 +13,10 @@ spring:
 dream:
   jwt:
     secret: replace-with-a-local-256-bit-secret
+  wx:
+    app-id: your-wechat-miniapp-app-id
+    app-secret: your-wechat-miniapp-app-secret
+    mock-enabled: true
   ai:
     deepseek:
       base-url: https://api.deepseek.com
