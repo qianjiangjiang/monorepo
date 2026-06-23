@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/qianjiangjiang/monorepo/docs/dream-result.schema.json",
+  "title": "DreamInterpretationResult",
+  "description": "解梦结果结构化数据，前后端共用的唯一事实来源。AI 必须输出符合本 Schema 的 JSON。",
+  "type": "object",
+  "required": ["title", "summary", "overallTone", "symbols", "emotion", "interpretations", "fortune", "suggestions"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "解读标题，如『关于梦见蛇的解读』",
+      "maxLength": 40
+    },
+    "summary": {
+      "type": "string",
+      "description": "一句话总体寓意",
+      "maxLength": 60
+    },
+    "overallTone": {
+      "type": "string",
+      "description": "整体基调",
+      "enum": ["positive", "neutral", "negative", "mixed"]
+    },
+    "symbols": {
+      "type": "array",
+      "description": "梦境象征元素拆解",
+      "items": {
+        "type": "object",
+        "required": ["keyword", "meaning"],
+        "additionalProperties": false,
+        "properties": {
+          "keyword": { "type": "string", "description": "象征关键词，如『蛇』" },
+          "meaning": { "type": "string", "description": "该象征的含义" },
+          "category": { "type": "string", "description": "分类，如动物/场景/人物/情绪" }
+        }
+      }
+    },
+    "emotion": {
+      "type": "object",
+      "description": "情绪分析",
+      "required": ["primary", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": "string", "description": "主导情绪，如焦虑/喜悦/恐惧" },
+        "description": { "type": "string", "description": "情绪状态说明" }
+      }
+    },
+    "interpretations": {
+      "type": "array",
+      "description": "多流派解读，一期至少含『传统文化』与『心理学』两条",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["school", "content"],
+        "additionalProperties": false,
+        "properties": {
+          "school": {
+            "type": "string",
+            "description": "解读流派",
+            "enum": ["传统文化", "心理学", "现代象征"]
+          },
+          "content": { "type": "string", "description": "该流派视角下的解读" }
+        }
+      }
+    },
+    "fortune": {
+      "type": "object",
+      "description": "倾向与免责",
+      "required": ["tendency", "disclaimer"],
+      "additionalProperties": false,
+      "properties": {
+        "tendency": { "type": "string", "description": "行动倾向，如『宜静观』『顺势而为』。不做吉凶绝对化断言" },
+        "disclaimer": { "type": "string", "description": "免责声明，固定提示解梦仅供自我觉察与娱乐参考" }
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "description": "行动建议",
+      "items": { "type": "string" }
+    },
+    "tags": {
+      "type": "array",
+      "description": "标签",
+      "items": { "type": "string" }
+    }
+  }
+}

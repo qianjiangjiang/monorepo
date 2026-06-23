@@ -1,0 +1,32 @@
+# ---- Java / Spring Boot ----
+target/
+*.class
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+HELP.md
+
+# ---- Node / uni-app / admin ----
+node_modules/
+dist/
+unpackage/
+.hbuilderx/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# ---- Env / secrets ----
+*.local
+.env
+.env.*
+!.env.example
+application-local.yml
+application-secret.yml
