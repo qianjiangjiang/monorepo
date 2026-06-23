@@ -1,5 +1,18 @@
-$u-primary: #f7c948;
-$u-info: #64748b;
-$u-success: #2f9e44;
-$u-warning: #f59f00;
-$u-error: #e03131;
+$u-primary: #f5d57a;
+$u-info: #8f93c7;
+$u-success: #4ade80;
+$u-warning: #f7b955;
+$u-error: #f87171;
+
+@import 'uview-plus/theme.scss';
+
+$dream-bg: #1a1033;
+$dream-bg-deep: #0a0820;
+$dream-panel: rgba(255, 255, 255, 0.1);
+$dream-panel-strong: rgba(255, 255, 255, 0.16);
+$dream-border: rgba(255, 255, 255, 0.18);
+$dream-gold: #f5d57a;
+$dream-cyan: #78d9ff;
+$dream-pink: #ff8ac5;
+$dream-text: #ffffff;
+$dream-muted: rgba(255, 255, 255, 0.72);
