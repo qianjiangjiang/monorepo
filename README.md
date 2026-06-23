@@ -34,3 +34,21 @@ AI 解梦微信小程序：用户输入梦境，AI 返回**结构化解梦报告
 - 后端、前端、管理端在各自子目录独立构建
 - 解梦结果结构以 `docs/dream-result.schema.json` 为唯一事实来源
 - 接口以 `docs/api-contract.md` 为准
+
+## M0 启动入口
+
+```bash
+# backend
+cd backend
+mvn spring-boot:run
+
+# miniapp
+cd miniapp
+npm install
+npm run dev:mp-weixin
+
+# admin
+cd admin
+npm install
+npm run dev
+```
