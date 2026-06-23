@@ -1,13 +1,25 @@
 package com.dream.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.dream.common.auth.UserPrincipal;
+import com.dream.common.exception.BusinessException;
+import com.dream.common.exception.ErrorCode;
+import com.dream.controller.dto.DreamDetailResponse;
+import com.dream.controller.dto.DreamHistoryItemResponse;
 import com.dream.controller.dto.DreamInterpretRequest;
 import com.dream.controller.dto.DreamInterpretResponse;
+import com.dream.controller.dto.PageResponse;
 import com.dream.domain.DreamRecord;
 import com.dream.domain.DreamResult;
+import com.dream.domain.Favorite;
 import com.dream.domain.PromptTemplate;
 import com.dream.mapper.DreamRecordMapper;
 import com.dream.mapper.DreamResultMapper;
+import com.dream.mapper.FavoriteMapper;
 import com.dream.service.ai.AiCompletionRequest;
+import com.dream.service.ai.AiConfigurationCache;
 import com.dream.service.ai.AiProviderException;
 import com.dream.service.ai.AiProviderRouter;
 import com.dream.service.ai.AiRouteResult;
@@ -19,7 +31,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,52 +57,140 @@ public class DreamInterpretationService {
 
     private final DreamRecordMapper dreamRecordMapper;
     private final DreamResultMapper dreamResultMapper;
-    private final com.dream.service.ai.AiConfigurationCache aiConfigurationCache;
+    private final FavoriteMapper favoriteMapper;
+    private final AiConfigurationCache aiConfigurationCache;
     private final PromptRenderer promptRenderer;
     private final AiProviderRouter aiProviderRouter;
     private final DreamResultSchemaValidator schemaValidator;
     private final SafeDreamResultFactory safeDreamResultFactory;
+    private final ContentSafetyService contentSafetyService;
+    private final DreamQuotaService dreamQuotaService;
+    private final DreamResultCacheService dreamResultCacheService;
+    private final DreamResultSanitizer dreamResultSanitizer;
     private final ObjectMapper objectMapper;
 
     public DreamInterpretationService(
             DreamRecordMapper dreamRecordMapper,
             DreamResultMapper dreamResultMapper,
-            com.dream.service.ai.AiConfigurationCache aiConfigurationCache,
+            FavoriteMapper favoriteMapper,
+            AiConfigurationCache aiConfigurationCache,
             PromptRenderer promptRenderer,
             AiProviderRouter aiProviderRouter,
             DreamResultSchemaValidator schemaValidator,
             SafeDreamResultFactory safeDreamResultFactory,
+            ContentSafetyService contentSafetyService,
+            DreamQuotaService dreamQuotaService,
+            DreamResultCacheService dreamResultCacheService,
+            DreamResultSanitizer dreamResultSanitizer,
             ObjectMapper objectMapper) {
         this.dreamRecordMapper = dreamRecordMapper;
         this.dreamResultMapper = dreamResultMapper;
+        this.favoriteMapper = favoriteMapper;
         this.aiConfigurationCache = aiConfigurationCache;
         this.promptRenderer = promptRenderer;
         this.aiProviderRouter = aiProviderRouter;
         this.schemaValidator = schemaValidator;
         this.safeDreamResultFactory = safeDreamResultFactory;
+        this.contentSafetyService = contentSafetyService;
+        this.dreamQuotaService = dreamQuotaService;
+        this.dreamResultCacheService = dreamResultCacheService;
+        this.dreamResultSanitizer = dreamResultSanitizer;
         this.objectMapper = objectMapper;
     }
 
     @Transactional
-    public DreamInterpretResponse interpret(Long userId, DreamInterpretRequest request) {
+    public DreamInterpretResponse interpret(UserPrincipal principal, DreamInterpretRequest request) {
+        Long userId = principal.userId();
+        String dreamText = request.dreamText().trim();
+        String school = normalizeSchool(request.school());
         List<String> tags = sanitizeTags(request.tags());
+
+        contentSafetyService.checkInterpretRequest(principal.openid(), dreamText, tags, school);
+
+        Optional<JsonNode> cachedResult = dreamResultCacheService.get(dreamText, tags, school)
+                .map(dreamResultSanitizer::withDisclaimer);
+        if (cachedResult.isPresent()) {
+            return persistInterpretation(userId, dreamText, tags, school, new AiOutcome(
+                    cachedResult.get(), "cache", "cache", "success", 0, 0, "cache"));
+        }
+
+        dreamQuotaService.consumeDailyFreeQuota(userId);
+
+        PromptTemplate template = aiConfigurationCache.getPromptTemplate("interpret").orElseGet(this::defaultPromptTemplate);
+        PromptRenderer.RenderedPrompt prompt = promptRenderer.render(template, dreamText, school);
+        AiOutcome outcome = completeWithGuardrails(dreamText, tags, prompt);
+        JsonNode result = dreamResultSanitizer.withDisclaimer(outcome.result());
+        dreamResultCacheService.put(dreamText, tags, school, result);
+
+        return persistInterpretation(userId, dreamText, tags, school, new AiOutcome(
+                result,
+                outcome.provider(),
+                outcome.model(),
+                outcome.status(),
+                outcome.tokenIn(),
+                outcome.tokenOut(),
+                prompt.version()));
+    }
+
+    public PageResponse<DreamHistoryItemResponse> history(Long userId, int page, int size) {
+        IPage<DreamRecord> recordPage = dreamRecordMapper.selectPage(
+                Page.of(normalizePage(page), normalizeSize(size)),
+                Wrappers.<DreamRecord>lambdaQuery()
+                        .eq(DreamRecord::getUserId, userId)
+                        .orderByDesc(DreamRecord::getCreatedAt)
+                        .orderByDesc(DreamRecord::getId));
+
+        List<Long> recordIds = recordPage.getRecords().stream()
+                .map(DreamRecord::getId)
+                .toList();
+        Map<Long, DreamResult> resultsByRecordId = latestResultsByRecordIds(recordIds);
+        Set<Long> favoriteIds = favoritedResultIds(userId, resultsByRecordId.values().stream()
+                .map(DreamResult::getId)
+                .toList());
+
+        List<DreamHistoryItemResponse> items = recordPage.getRecords().stream()
+                .map(record -> toHistoryItem(record, resultsByRecordId.get(record.getId()), favoriteIds))
+                .toList();
+        return new PageResponse<>(recordPage.getTotal(), items);
+    }
+
+    public DreamDetailResponse detail(Long userId, Long dreamRecordId) {
+        DreamRecord record = dreamRecordMapper.selectOne(Wrappers.<DreamRecord>lambdaQuery()
+                .eq(DreamRecord::getId, dreamRecordId)
+                .eq(DreamRecord::getUserId, userId));
+        if (record == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "dream record not found");
+        }
+
+        DreamResult result = latestResultForRecord(record.getId());
+        if (result == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "dream result not found");
+        }
+
+        Set<Long> favoriteIds = favoritedResultIds(userId, List.of(result.getId()));
+        DreamHistoryItemResponse item = toHistoryItem(record, result, favoriteIds);
+        return new DreamDetailResponse(item, item.result());
+    }
+
+    private DreamInterpretResponse persistInterpretation(
+            Long userId,
+            String dreamText,
+            List<String> tags,
+            String school,
+            AiOutcome outcome) {
         DreamRecord record = new DreamRecord();
         record.setUserId(userId);
-        record.setDreamText(request.dreamText());
+        record.setDreamText(dreamText);
         record.setTags(tags.isEmpty() ? null : String.join(",", tags));
         dreamRecordMapper.insert(record);
 
-        PromptTemplate template = aiConfigurationCache.getPromptTemplate("interpret").orElseGet(this::defaultPromptTemplate);
-        PromptRenderer.RenderedPrompt prompt = promptRenderer.render(template, request.dreamText(), request.school());
-        AiOutcome outcome = completeWithGuardrails(request.dreamText(), tags, prompt);
-
         DreamResult result = new DreamResult();
         result.setDreamRecordId(record.getId());
-        result.setSchool(StringUtils.hasText(request.school()) ? request.school() : null);
+        result.setSchool(StringUtils.hasText(school) ? school : null);
         result.setResultJson(writeJson(outcome.result()));
         result.setProvider(outcome.provider());
         result.setModel(outcome.model());
-        result.setPromptVersion(prompt.version());
+        result.setPromptVersion(outcome.promptVersion());
         result.setTokenIn(outcome.tokenIn());
         result.setTokenOut(outcome.tokenOut());
         result.setStatus(outcome.status());
@@ -114,7 +220,7 @@ public class DreamInterpretationService {
 
             ParsedDreamResult parsed = parseAndValidate(first.response().content());
             if (parsed.valid()) {
-                return new AiOutcome(parsed.result(), provider, model, fallbackUsed ? "fallback" : "success", tokenIn, tokenOut);
+                return new AiOutcome(parsed.result(), provider, model, fallbackUsed ? "fallback" : "success", tokenIn, tokenOut, prompt.version());
             }
 
             AiRouteResult repaired = aiProviderRouter.complete(new AiCompletionRequest(
@@ -130,20 +236,20 @@ public class DreamInterpretationService {
 
             ParsedDreamResult repairedParsed = parseAndValidate(repaired.response().content());
             if (repairedParsed.valid()) {
-                return new AiOutcome(repairedParsed.result(), provider, model, fallbackUsed ? "fallback" : "success", tokenIn, tokenOut);
+                return new AiOutcome(repairedParsed.result(), provider, model, fallbackUsed ? "fallback" : "success", tokenIn, tokenOut, prompt.version());
             }
             log.warn("AI result failed schema validation after repair errors={}", repairedParsed.errors());
         } catch (AiProviderException exception) {
             log.warn("AI provider routing failed: {}", exception.getMessage());
         }
 
-        JsonNode safeResult = safeDreamResultFactory.create(dreamText, tags);
-        return new AiOutcome(safeResult, provider, model, "fallback", tokenIn, tokenOut);
+        JsonNode safeResult = dreamResultSanitizer.withDisclaimer(safeDreamResultFactory.create(dreamText, tags));
+        return new AiOutcome(safeResult, provider, model, "fallback", tokenIn, tokenOut, prompt.version());
     }
 
     private ParsedDreamResult parseAndValidate(String rawContent) {
         try {
-            JsonNode node = objectMapper.readTree(extractJsonObject(rawContent));
+            JsonNode node = dreamResultSanitizer.withDisclaimer(objectMapper.readTree(extractJsonObject(rawContent)));
             DreamValidationResult validationResult = schemaValidator.validate(node);
             if (validationResult.valid()) {
                 return ParsedDreamResult.valid(node);
@@ -210,10 +316,69 @@ public class DreamInterpretationService {
                 1. 只输出一个 JSON 对象。
                 2. 字段必须符合 dream-result.schema.json。
                 3. interpretations 至少包含 school 为“传统文化”和“心理学”的两条。
-                4. fortune.disclaimer 固定表达为“解梦仅供自我觉察与娱乐参考，不构成现实判断或专业建议。”。
-                """);
+                4. fortune.disclaimer 固定表达为“%s”。
+                """.formatted(DreamResultSanitizer.DISCLAIMER));
         template.setSchemaJson(DEFAULT_SCHEMA_HINT);
         return template;
+    }
+
+    private Map<Long, DreamResult> latestResultsByRecordIds(List<Long> recordIds) {
+        if (recordIds.isEmpty()) {
+            return Map.of();
+        }
+        List<DreamResult> results = dreamResultMapper.selectList(Wrappers.<DreamResult>lambdaQuery()
+                .in(DreamResult::getDreamRecordId, recordIds)
+                .orderByDesc(DreamResult::getCreatedAt)
+                .orderByDesc(DreamResult::getId));
+        Map<Long, DreamResult> latest = new LinkedHashMap<>();
+        for (DreamResult result : results) {
+            latest.putIfAbsent(result.getDreamRecordId(), result);
+        }
+        return latest;
+    }
+
+    private DreamResult latestResultForRecord(Long recordId) {
+        return dreamResultMapper.selectOne(Wrappers.<DreamResult>lambdaQuery()
+                .eq(DreamResult::getDreamRecordId, recordId)
+                .orderByDesc(DreamResult::getCreatedAt)
+                .orderByDesc(DreamResult::getId)
+                .last("LIMIT 1"));
+    }
+
+    private Set<Long> favoritedResultIds(Long userId, List<Long> resultIds) {
+        List<Long> safeResultIds = resultIds.stream()
+                .filter(Objects::nonNull)
+                .toList();
+        if (safeResultIds.isEmpty()) {
+            return Set.of();
+        }
+        return favoriteMapper.selectList(Wrappers.<Favorite>lambdaQuery()
+                        .eq(Favorite::getUserId, userId)
+                        .in(Favorite::getDreamResultId, safeResultIds))
+                .stream()
+                .map(Favorite::getDreamResultId)
+                .collect(Collectors.toSet());
+    }
+
+    private DreamHistoryItemResponse toHistoryItem(DreamRecord record, DreamResult result, Set<Long> favoriteIds) {
+        JsonNode parsedResult = result == null ? null : readResultJson(result.getResultJson());
+        return new DreamHistoryItemResponse(
+                record.getId(),
+                result == null ? null : result.getId(),
+                record.getDreamText(),
+                parsedResult == null ? "" : parsedResult.path("summary").asText(""),
+                record.getCreatedAt(),
+                parseTags(record.getTags()),
+                result != null && favoriteIds.contains(result.getId()),
+                parsedResult);
+    }
+
+    private JsonNode readResultJson(String resultJson) {
+        try {
+            return dreamResultSanitizer.withDisclaimer(objectMapper.readTree(resultJson));
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "dream result json is invalid");
+        }
     }
 
     private String writeJson(JsonNode result) {
@@ -242,6 +407,34 @@ public class DreamInterpretationService {
         return sanitized;
     }
 
+    private List<String> parseTags(String tags) {
+        if (!StringUtils.hasText(tags)) {
+            return List.of();
+        }
+        List<String> parsed = new ArrayList<>();
+        for (String tag : tags.split(",")) {
+            if (StringUtils.hasText(tag)) {
+                parsed.add(tag.trim());
+            }
+        }
+        return parsed;
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(page, 1);
+    }
+
+    private int normalizeSize(int size) {
+        if (size <= 0) {
+            return 20;
+        }
+        return Math.min(size, 50);
+    }
+
+    private String normalizeSchool(String school) {
+        return StringUtils.hasText(school) ? school.trim() : "";
+    }
+
     private record ParsedDreamResult(JsonNode result, boolean valid, List<String> errors) {
 
         private static ParsedDreamResult valid(JsonNode result) {
@@ -249,7 +442,7 @@ public class DreamInterpretationService {
         }
 
         private static ParsedDreamResult invalid(List<String> errors) {
-            return new ParsedDreamResult(null, false, errors);
+            return new ParsedDreamResult(null, false, List.copyOf(errors));
         }
     }
 
@@ -259,7 +452,8 @@ public class DreamInterpretationService {
             String model,
             String status,
             int tokenIn,
-            int tokenOut
+            int tokenOut,
+            String promptVersion
     ) {
     }
 }
