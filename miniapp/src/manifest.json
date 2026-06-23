@@ -1,0 +1,20 @@
+{
+  "name": "AI 解梦",
+  "appid": "__UNI__DREAM",
+  "description": "AI dream interpretation miniapp scaffold",
+  "versionName": "0.0.1",
+  "versionCode": "1",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "AI 解梦"
+  }
+}
