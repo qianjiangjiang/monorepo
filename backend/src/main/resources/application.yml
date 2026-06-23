@@ -4,6 +4,23 @@ server:
 spring:
   application:
     name: dream-backend
+  datasource:
+    url: ${DREAM_DB_URL:jdbc:mysql://localhost:3306/dream?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${DREAM_DB_USERNAME:dream}
+    password: ${DREAM_DB_PASSWORD:change-me}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      initialization-fail-timeout: -1
+  data:
+    redis:
+      host: ${DREAM_REDIS_HOST:localhost}
+      port: ${DREAM_REDIS_PORT:6379}
+      password: ${DREAM_REDIS_PASSWORD:}
+  cache:
+    type: redis
+  sql:
+    init:
+      mode: never
 
 management:
   endpoints:
@@ -19,5 +36,15 @@ mybatis-plus:
 dream:
   jwt:
     issuer: dream-miniapp
+    secret: ${DREAM_JWT_SECRET:local-dev-secret-change-me-at-least-32-bytes}
+    expiration: 30d
+  wx:
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+    mock-enabled: ${WECHAT_MOCK_ENABLED:false}
+    code2-session-url: https://api.weixin.qq.com/sns/jscode2session
+    timeout: 5s
+  rate-limit:
+    default-window: 60s
   ai:
     default-provider: deepseek
