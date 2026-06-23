@@ -18,6 +18,7 @@ dream:
     app-secret: your-wechat-miniapp-app-secret
     mock-enabled: true
   ai:
+    encryption-key: replace-with-a-local-ai-config-secret
     deepseek:
       base-url: https://api.deepseek.com
       api-key: ${DEEPSEEK_API_KEY:}
