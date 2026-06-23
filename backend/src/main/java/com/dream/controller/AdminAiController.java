@@ -4,8 +4,13 @@ import com.dream.common.ApiResponse;
 import com.dream.controller.dto.AiProviderConfigRequest;
 import com.dream.controller.dto.AiProviderConfigResponse;
 import com.dream.controller.dto.AiProviderTestResponse;
+import com.dream.controller.dto.AdminDreamRecordResponse;
+import com.dream.controller.dto.PageResponse;
 import com.dream.controller.dto.PromptTemplateRequest;
 import com.dream.controller.dto.PromptTemplateResponse;
+import com.dream.controller.dto.SensitiveWordRequest;
+import com.dream.controller.dto.SensitiveWordResponse;
+import com.dream.service.AdminContentService;
 import com.dream.service.AiAdminService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminAiController {
 
     private final AiAdminService aiAdminService;
+    private final AdminContentService adminContentService;
 
-    public AdminAiController(AiAdminService aiAdminService) {
+    public AdminAiController(AiAdminService aiAdminService, AdminContentService adminContentService) {
         this.aiAdminService = aiAdminService;
+        this.adminContentService = adminContentService;
     }
 
     @GetMapping("/ai/config")
@@ -71,5 +79,29 @@ public class AdminAiController {
     public ApiResponse<Void> deletePromptTemplate(@PathVariable Long id) {
         aiAdminService.deletePromptTemplate(id);
         return ApiResponse.ok();
+    }
+
+    @GetMapping("/sensitive")
+    public ApiResponse<List<SensitiveWordResponse>> listSensitiveWords() {
+        return ApiResponse.ok(adminContentService.listSensitiveWords());
+    }
+
+    @PostMapping("/sensitive")
+    public ApiResponse<SensitiveWordResponse> saveSensitiveWord(
+            @Valid @RequestBody SensitiveWordRequest request) {
+        return ApiResponse.ok(adminContentService.saveSensitiveWord(request));
+    }
+
+    @DeleteMapping("/sensitive/{id}")
+    public ApiResponse<Void> deleteSensitiveWord(@PathVariable Long id) {
+        adminContentService.deleteSensitiveWord(id);
+        return ApiResponse.ok();
+    }
+
+    @GetMapping("/dream/records")
+    public ApiResponse<PageResponse<AdminDreamRecordResponse>> listDreamRecords(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(adminContentService.listDreamRecords(page, size));
     }
 }
