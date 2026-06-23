@@ -17,6 +17,10 @@ dream:
     app-id: your-wechat-miniapp-app-id
     app-secret: your-wechat-miniapp-app-secret
     mock-enabled: true
+    content-safety-enabled: true
+  interpret:
+    daily-free-limit: 5
+    cache-ttl-seconds: 86400
   ai:
     encryption-key: replace-with-a-local-ai-config-secret
     deepseek:

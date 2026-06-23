@@ -42,8 +42,14 @@ dream:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
     mock-enabled: ${WECHAT_MOCK_ENABLED:false}
+    content-safety-enabled: ${WECHAT_CONTENT_SAFETY_ENABLED:true}
     code2-session-url: https://api.weixin.qq.com/sns/jscode2session
+    access-token-url: https://api.weixin.qq.com/cgi-bin/token
+    msg-sec-check-url: https://api.weixin.qq.com/wxa/msg_sec_check
     timeout: 5s
+  interpret:
+    daily-free-limit: ${DREAM_INTERPRET_DAILY_FREE_LIMIT:5}
+    cache-ttl-seconds: ${DREAM_INTERPRET_CACHE_TTL_SECONDS:86400}
   rate-limit:
     default-window: 60s
   ai:
