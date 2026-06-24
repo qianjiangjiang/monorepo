@@ -25,6 +25,14 @@ class PromptRendererTest {
         assertThat(rendered.userPrompt()).doesNotContain("用户展示偏好");
     }
 
+    @Test
+    void doesNotReplacePlaceholderTextInsideDreamText() {
+        PromptRenderer.RenderedPrompt rendered = renderer.render(template(), "梦里看见 {{school}} 字样", "心理学");
+
+        assertThat(rendered.userPrompt()).contains("梦境：梦里看见 {{school}} 字样");
+        assertThat(rendered.userPrompt()).contains("流派：全部，必须包含传统文化与心理学；用户展示偏好：心理学");
+    }
+
     private PromptTemplate template() {
         PromptTemplate template = new PromptTemplate();
         template.setSystemPrompt("system");

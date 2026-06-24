@@ -30,6 +30,7 @@
 ```json
 { "dreamRecordId": 10, "dreamResultId": 20, "school": "心理学", "result": { /* dream-result.schema.json */ } }
 ```
+缓存命中且当前用户没有对应历史记录时，后端直接返回解读结果但不持久化，`dreamRecordId` / `dreamResultId` 为 `null`。
 限流：按用户/IP；超每日免费次数返回 `429`。
 
 ### GET /api/dream/history?page=1&size=20

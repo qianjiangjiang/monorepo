@@ -1,6 +1,6 @@
-# admin
+# admin（M5 承载目录）
 
-Vue3 + Vite + TypeScript + Element Plus 管理端骨架。当前 M0 提供空登录页占位，AI 渠道配置、提示词模板、敏感词、解梦记录等功能在后续里程碑实现。
+Vue3 + Vite + TypeScript + Element Plus 管理端承载目录。管理端按 M5 交付口径推进，当前不计入已交付功能面。
 
 ## 本地启动
 

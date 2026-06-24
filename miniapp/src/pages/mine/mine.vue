@@ -28,6 +28,9 @@ function logout() {
 }
 
 function openFavorite(record: DreamRecord) {
+  if (typeof record.dreamRecordId !== 'number') {
+    return
+  }
   uni.navigateTo({ url: `/pages/detail/detail?id=${record.dreamRecordId}` })
 }
 
@@ -87,7 +90,7 @@ function goHome() {
         <view v-if="store.favorites.length" class="favorite-list">
           <view
             v-for="record in store.favorites"
-            :key="record.dreamRecordId"
+            :key="record.dreamRecordId ?? record.createdAt"
             class="favorite-item"
             @tap="openFavorite(record)"
           >

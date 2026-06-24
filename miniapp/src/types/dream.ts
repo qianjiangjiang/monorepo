@@ -36,8 +36,8 @@ export interface DreamResult {
 }
 
 export interface DreamRecord {
-  dreamRecordId: number
-  dreamResultId: number
+  dreamRecordId: number | null
+  dreamResultId: number | null
   dreamText: string
   summary: string
   createdAt: string
@@ -54,8 +54,8 @@ export interface InterpretDreamPayload {
 }
 
 export interface InterpretDreamResponse {
-  dreamRecordId: number
-  dreamResultId: number
+  dreamRecordId: number | null
+  dreamResultId: number | null
   school?: '' | InterpretationSchool
   result: DreamResult
 }

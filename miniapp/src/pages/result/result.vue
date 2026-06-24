@@ -7,6 +7,7 @@ import { useDreamStore } from '../../stores/dream'
 const store = useDreamStore()
 const record = computed(() => store.currentRecord)
 const result = computed(() => store.currentResult)
+const canFavorite = computed(() => typeof record.value?.dreamResultId === 'number')
 const favoriteText = computed(() => (store.isCurrentFavorite ? '已收藏' : '收藏'))
 
 onLoad(() => {
@@ -24,7 +25,11 @@ onShareAppMessage(() => ({
 }))
 
 async function toggleFavorite() {
-  await store.toggleCurrentFavorite()
+  const changed = await store.toggleCurrentFavorite()
+  if (!changed) {
+    uni.showToast({ title: '缓存结果暂不支持收藏', icon: 'none' })
+    return
+  }
   uni.showToast({
     title: store.isCurrentFavorite ? '已加入收藏' : '已取消收藏',
     icon: 'none',
@@ -51,8 +56,8 @@ function replay() {
 
       <ResultCards :result="result" :preferred-school="record.school" />
 
-      <view class="bottom-actions">
-        <button class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite">
+      <view class="bottom-actions" :class="{ 'without-favorite': !canFavorite }">
+        <button v-if="canFavorite" class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite">
           {{ favoriteText }}
         </button>
         <button class="secondary-action action-button" hover-class="action-hover" @tap="createPoster">
@@ -100,6 +105,10 @@ function replay() {
   background: rgba(13, 8, 38, 0.84);
   box-shadow: 0 18rpx 60rpx rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(18rpx);
+}
+
+.bottom-actions.without-favorite {
+  grid-template-columns: 1fr 1.2fr;
 }
 
 .action-button {

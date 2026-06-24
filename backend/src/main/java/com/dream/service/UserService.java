@@ -7,6 +7,7 @@ import com.dream.domain.User;
 import com.dream.mapper.UserMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -51,7 +52,15 @@ public class UserService {
         created.setOpenid(openid);
         created.setNickname("");
         created.setAvatar("");
-        userMapper.insert(created);
+        try {
+            userMapper.insert(created);
+        } catch (DuplicateKeyException exception) {
+            User concurrentUser = findByOpenid(openid);
+            if (concurrentUser != null) {
+                return concurrentUser;
+            }
+            throw exception;
+        }
         return created;
     }
 }
