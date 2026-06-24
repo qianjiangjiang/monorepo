@@ -69,6 +69,47 @@ class DreamResultSchemaValidatorTest {
     }
 
     @Test
+    void acceptsSensitiveContentSafeFallbackJson() throws Exception {
+        JsonNode node = objectMapper.readTree("""
+                {
+                  "title": "暂不解读该类内容",
+                  "summary": "这类内容不适合做梦境解读，请优先关注现实安全与支持。",
+                  "overallTone": "neutral",
+                  "symbols": [],
+                  "emotion": {
+                    "primary": "需要支持",
+                    "description": "当前内容更适合从现实安全与情绪支持角度处理，而不是展开梦境象征解读。"
+                  },
+                  "interpretations": [
+                    {
+                      "school": "传统文化",
+                      "content": "此类内容不在解梦助手的服务范围内，暂不从传统文化视角展开解读。"
+                    },
+                    {
+                      "school": "心理学",
+                      "content": "此类内容不适合由解梦助手分析，建议优先寻求现实中的安全支持与专业帮助。"
+                    }
+                  ],
+                  "fortune": {
+                    "tendency": "宜暂停使用解梦功能，优先寻求现实帮助与安全支持",
+                    "disclaimer": "解梦仅供自我觉察与娱乐参考，不构成现实判断或专业建议。"
+                  },
+                  "suggestions": [
+                    "先暂停继续描述高风险细节，确认自己和他人的现实安全",
+                    "联系身边可信任的人，说明当前需要陪伴或协助",
+                    "若涉及自我伤害风险，请立即联系当地紧急救助或心理援助热线"
+                  ],
+                  "tags": ["安全兜底"]
+                }
+                """);
+
+        DreamValidationResult result = validator.validate(node);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @Test
     void safeFallbackResultIsSchemaCompliant() {
         SafeDreamResultFactory factory = new SafeDreamResultFactory(objectMapper);
 
