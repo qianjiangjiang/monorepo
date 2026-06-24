@@ -10,9 +10,9 @@ const selectedSchool = ref<'' | InterpretationSchool>(store.preferredSchool)
 
 const quickTags = ['星空', '飞行', '水', '旧人', '反复出现', '焦虑', '压力', '清醒梦']
 const schools: Array<{ label: string; value: '' | InterpretationSchool }> = [
-  { label: '双视角', value: '' },
-  { label: '传统文化', value: '传统文化' },
-  { label: '心理学', value: '心理学' },
+  { label: '默认', value: '' },
+  { label: '传统优先', value: '传统文化' },
+  { label: '心理优先', value: '心理学' },
 ]
 
 const canSubmit = computed(() => dreamText.value.trim().length >= 6)
@@ -115,7 +115,7 @@ function goMine() {
 
       <view class="section-block">
         <view class="section-row">
-          <text class="section-title">流派偏好</text>
+          <text class="section-title">显示偏好</text>
         </view>
         <view class="school-grid">
           <button
