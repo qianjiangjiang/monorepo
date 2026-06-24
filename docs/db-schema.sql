@@ -7,6 +7,7 @@ CREATE TABLE `user` (
   `openid`     VARCHAR(64)  NOT NULL COMMENT '微信 openid',
   `nickname`   VARCHAR(64)  DEFAULT NULL,
   `avatar`     VARCHAR(512) DEFAULT NULL,
+  `role`       VARCHAR(16)  NOT NULL DEFAULT 'user' COMMENT 'user/admin',
   `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

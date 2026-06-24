@@ -26,7 +26,7 @@ public class AuthService {
     public WxLoginResponse wxLogin(String code) {
         WechatSession session = wechatClient.code2Session(code);
         User user = userService.upsertByOpenid(session.openid());
-        String token = jwtService.issueToken(user.getId(), user.getOpenid());
+        String token = jwtService.issueToken(user.getId(), user.getOpenid(), user.getRole());
         return new WxLoginResponse(token, UserResponse.from(user));
     }
 }

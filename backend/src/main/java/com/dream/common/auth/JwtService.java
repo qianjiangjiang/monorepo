@@ -24,13 +24,14 @@ public class JwtService {
         this.properties = properties;
     }
 
-    public String issueToken(Long userId, String openid) {
+    public String issueToken(Long userId, String openid, String role) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(properties.getExpiration());
         return Jwts.builder()
                 .issuer(properties.getIssuer())
                 .subject(String.valueOf(userId))
                 .claim("openid", openid)
+                .claim("role", UserPrincipal.normalizeRole(role))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .signWith(signingKey())
@@ -50,7 +51,8 @@ public class JwtService {
                     .getPayload();
             Long userId = Long.valueOf(claims.getSubject());
             String openid = claims.get("openid", String.class);
-            return new UserPrincipal(userId, openid);
+            String role = claims.get("role", String.class);
+            return new UserPrincipal(userId, openid, role);
         } catch (JwtException | IllegalArgumentException exception) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
