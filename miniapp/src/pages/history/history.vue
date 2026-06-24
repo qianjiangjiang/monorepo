@@ -40,7 +40,7 @@ function goHome() {
           <text class="brand">Timeline</text>
           <text class="page-title">梦境历史</text>
         </view>
-        <button class="ghost-action head-button" hover-class="button-hover" @tap="goHome">记录新梦</button>
+        <button class="ghost-action head-button" hover-class="button-hover" @tap="goHome()">记录新梦</button>
       </view>
 
       <view v-if="history.length" class="timeline">
@@ -71,7 +71,7 @@ function goHome() {
       <view v-else class="glass-panel empty-state">
         <text class="empty-title">还没有梦境记录</text>
         <text class="empty-copy">写下第一个梦，历史时间轴会自动保存解读。</text>
-        <button class="primary-action empty-button" hover-class="button-hover" @tap="goHome">开始记录</button>
+        <button class="primary-action empty-button" hover-class="button-hover" @tap="goHome()">开始记录</button>
       </view>
     </view>
   </view>

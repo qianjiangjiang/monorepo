@@ -1,9 +1,6 @@
 package com.dream.common.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import com.dream.common.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -15,11 +12,14 @@ class JwtAuthInterceptorTest {
     private final JwtAuthInterceptor interceptor = new JwtAuthInterceptor(jwtService);
 
     @Test
-    void userTokenIsRejectedForAdminApi() {
-        MockHttpServletRequest request = request("/api/admin/ai/config", jwtService.issueToken(1L, "openid"));
+    void userTokenIsAuthenticatedForAdminApi() {
+        MockHttpServletRequest request = request("/api/admin/ai/config", jwtService.issueToken(1L, "openid", "user"));
 
-        assertThatThrownBy(() -> interceptor.preHandle(request, new MockHttpServletResponse(), new Object()))
-                .isInstanceOf(BusinessException.class);
+        boolean accepted = interceptor.preHandle(request, new MockHttpServletResponse(), new Object());
+
+        assertThat(accepted).isTrue();
+        assertThat(CurrentUserContext.require().isAdmin()).isFalse();
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
     }
 
     @Test

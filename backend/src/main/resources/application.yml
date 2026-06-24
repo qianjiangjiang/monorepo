@@ -44,7 +44,7 @@ dream:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
     mock-enabled: ${WECHAT_MOCK_ENABLED:true}
-    content-safety-enabled: ${WECHAT_CONTENT_SAFETY_ENABLED:true}
+    content-safety-enabled: ${WECHAT_CONTENT_SAFETY_ENABLED:false}
     code2-session-url: https://api.weixin.qq.com/sns/jscode2session
     access-token-url: https://api.weixin.qq.com/cgi-bin/token
     msg-sec-check-url: https://api.weixin.qq.com/wxa/msg_sec_check

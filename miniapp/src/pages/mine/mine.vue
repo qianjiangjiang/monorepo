@@ -112,7 +112,7 @@ function goHome() {
           <text>隐私模式</text>
           <switch color="#f5d57a" checked />
         </view>
-        <view class="setting-row link-row" @tap="goHome">
+        <view class="setting-row link-row" @tap="goHome()">
           <text>返回首页</text>
           <text class="row-arrow">›</text>
         </view>

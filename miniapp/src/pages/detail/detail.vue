@@ -52,10 +52,10 @@ function goBack() {
       <ResultCards :result="result" :preferred-school="record.school" compact />
 
       <view class="detail-actions">
-        <button class="secondary-action detail-button" hover-class="button-hover" @tap="toggleFavorite">
+        <button class="secondary-action detail-button" hover-class="button-hover" @tap="toggleFavorite()">
           {{ store.isCurrentFavorite ? '已收藏' : '收藏' }}
         </button>
-        <button class="primary-action detail-button" hover-class="button-hover" @tap="createPoster">
+        <button class="primary-action detail-button" hover-class="button-hover" @tap="createPoster()">
           分享海报
         </button>
       </view>
@@ -64,7 +64,7 @@ function goBack() {
     <view v-else-if="!loading" class="page-shell">
       <view class="glass-panel empty-state">
         <text class="empty-title">没有找到这条记录</text>
-        <button class="primary-action empty-button" hover-class="button-hover" @tap="goBack">返回</button>
+        <button class="primary-action empty-button" hover-class="button-hover" @tap="goBack()">返回</button>
       </view>
     </view>
   </view>

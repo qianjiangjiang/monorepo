@@ -57,16 +57,16 @@ function replay() {
       <ResultCards :result="result" :preferred-school="record.school" />
 
       <view class="bottom-actions" :class="{ 'without-favorite': !canFavorite }">
-        <button v-if="canFavorite" class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite">
+        <button v-if="canFavorite" class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite()">
           {{ favoriteText }}
         </button>
         <button class="secondary-action action-button" hover-class="action-hover" open-type="share">
           转发
         </button>
-        <button class="secondary-action action-button" hover-class="action-hover" @tap="createPoster">
+        <button class="secondary-action action-button" hover-class="action-hover" @tap="createPoster()">
           海报
         </button>
-        <button class="primary-action action-button" hover-class="action-hover" @tap="replay">
+        <button class="primary-action action-button" hover-class="action-hover" @tap="replay()">
           再解一次
         </button>
       </view>

@@ -33,31 +33,38 @@ button {
   min-height: 100vh;
   box-sizing: border-box;
   padding: 42rpx 32rpx 56rpx;
-  background:
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.82) 0 1rpx, transparent 2rpx),
+    radial-gradient(circle, rgba(245, 213, 122, 0.7) 0 1rpx, transparent 2rpx),
     radial-gradient(circle at 16% 8%, rgba(245, 213, 122, 0.2), transparent 24%),
     radial-gradient(circle at 88% 14%, rgba(120, 217, 255, 0.18), transparent 28%),
     radial-gradient(circle at 58% 76%, rgba(255, 138, 197, 0.16), transparent 30%),
     linear-gradient(158deg, #1a1033 0%, #2c1855 48%, #090820 100%);
+  background-position:
+    18rpx 28rpx,
+    88rpx 124rpx,
+    0 0,
+    0 0,
+    0 0,
+    0 0;
+  background-size:
+    142rpx 182rpx,
+    218rpx 246rpx,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-repeat:
+    repeat,
+    repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat;
   color: #ffffff;
   overflow-x: hidden;
   position: relative;
-}
-
-.stars-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.82) 0 1rpx, transparent 2rpx),
-    radial-gradient(circle, rgba(245, 213, 122, 0.7) 0 1rpx, transparent 2rpx);
-  background-position:
-    18rpx 28rpx,
-    88rpx 124rpx;
-  background-size:
-    142rpx 182rpx,
-    218rpx 246rpx;
-  opacity: 0.34;
+  z-index: 0;
 }
 
 .page-shell {

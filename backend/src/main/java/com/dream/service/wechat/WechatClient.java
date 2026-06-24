@@ -3,6 +3,8 @@ package com.dream.service.wechat;
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Instant;
 import org.springframework.stereotype.Component;
@@ -18,12 +20,14 @@ public class WechatClient {
 
     private final WechatProperties properties;
     private final WebClient webClient;
+    private final ObjectMapper objectMapper;
     private volatile String cachedAccessToken;
     private volatile Instant accessTokenExpiresAt = Instant.EPOCH;
 
-    public WechatClient(WechatProperties properties, WebClient.Builder webClientBuilder) {
+    public WechatClient(WechatProperties properties, WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.properties = properties;
         this.webClient = webClientBuilder.build();
+        this.objectMapper = objectMapper;
     }
 
     public WechatSession code2Session(String code) {
@@ -46,7 +50,8 @@ public class WechatClient {
         WechatSession session = webClient.get()
                 .uri(uri)
                 .retrieve()
-                .bodyToMono(WechatSession.class)
+                .bodyToMono(String.class)
+                .map(body -> parseWechatResponse(body, WechatSession.class, "code2session"))
                 .block(properties.getTimeout());
 
         if (session == null) {
@@ -115,7 +120,8 @@ public class WechatClient {
             AccessTokenResponse response = webClient.get()
                     .uri(uri)
                     .retrieve()
-                    .bodyToMono(AccessTokenResponse.class)
+                    .bodyToMono(String.class)
+                    .map(body -> parseWechatResponse(body, AccessTokenResponse.class, "access_token"))
                     .block(properties.getTimeout());
             if (response == null) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "wechat access_token returned empty response");
@@ -130,6 +136,17 @@ public class WechatClient {
             cachedAccessToken = response.accessToken();
             accessTokenExpiresAt = now.plusSeconds(Math.max(60, expiresIn - ACCESS_TOKEN_EXPIRY_SKEW_SECONDS));
             return cachedAccessToken;
+        }
+    }
+
+    private <T> T parseWechatResponse(String body, Class<T> responseType, String operation) {
+        if (!StringUtils.hasText(body)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "wechat " + operation + " returned empty response");
+        }
+        try {
+            return objectMapper.readValue(body, responseType);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "wechat " + operation + " returned invalid response");
         }
     }
 

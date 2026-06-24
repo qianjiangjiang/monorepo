@@ -234,10 +234,10 @@ onShow(() => {
       </view>
 
       <view class="poster-actions">
-        <button class="secondary-action poster-button" hover-class="button-hover" @tap="previewPoster">
+        <button class="secondary-action poster-button" hover-class="button-hover" @tap="previewPoster()">
           {{ drawing ? '生成中' : '预览' }}
         </button>
-        <button class="primary-action poster-button" hover-class="button-hover" @tap="savePoster">保存</button>
+        <button class="primary-action poster-button" hover-class="button-hover" @tap="savePoster()">保存</button>
       </view>
     </view>
   </view>

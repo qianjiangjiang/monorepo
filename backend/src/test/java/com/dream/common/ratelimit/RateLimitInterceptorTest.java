@@ -43,7 +43,7 @@ class RateLimitInterceptorTest {
 
     @Test
     void usesCurrentUserWhenUserScopedLimitIsConfigured() throws Exception {
-        CurrentUserContext.set(new UserPrincipal(42L, "openid"));
+        CurrentUserContext.set(new UserPrincipal(42L, "openid", "user"));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("198.51.100.9");
 

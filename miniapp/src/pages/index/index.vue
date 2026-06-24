@@ -69,8 +69,8 @@ function goMine() {
           <text class="page-title">神秘星空解梦</text>
         </view>
         <view class="top-actions">
-          <button class="icon-button" hover-class="icon-button-hover" @tap="goHistory">历</button>
-          <button class="icon-button" hover-class="icon-button-hover" @tap="goMine">我</button>
+          <button class="icon-button" hover-class="icon-button-hover" @tap="goHistory()">历</button>
+          <button class="icon-button" hover-class="icon-button-hover" @tap="goMine()">我</button>
         </view>
       </view>
 
@@ -90,7 +90,7 @@ function goMine() {
           placeholder="例如：我梦见自己站在星空下，推开一扇发光的门……"
           placeholder-style="color: rgba(255,255,255,0.42);"
           auto-height
-          @input="onInput"
+          @input="onInput($event)"
         />
       </view>
 
@@ -135,7 +135,7 @@ function goMine() {
         class="primary-action submit-button"
         :class="{ disabled: !canSubmit }"
         hover-class="primary-hover"
-        @tap="submitDream"
+        @tap="submitDream()"
       >
         解梦
       </button>

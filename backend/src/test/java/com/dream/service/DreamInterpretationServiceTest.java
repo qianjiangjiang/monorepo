@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class DreamInterpretationServiceTest {
@@ -67,6 +68,9 @@ class DreamInterpretationServiceTest {
     @Mock
     private DreamResultCacheService dreamResultCacheService;
 
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private DreamInterpretationService service;
 
@@ -86,6 +90,7 @@ class DreamInterpretationServiceTest {
                 dreamQuotaService,
                 dreamResultCacheService,
                 dreamResultSanitizer,
+                transactionTemplate,
                 objectMapper);
     }
 
@@ -106,7 +111,7 @@ class DreamInterpretationServiceTest {
         when(dreamResultMapper.selectOne(any())).thenReturn(result);
 
         DreamInterpretResponse response = service.interpret(
-                new UserPrincipal(7L, "openid-1"),
+                new UserPrincipal(7L, "openid-1", "user"),
                 new DreamInterpretRequest(" 梦见月亮 ", List.of("安静"), "心理学"));
 
         assertThat(response.dreamRecordId()).isEqualTo(21L);
@@ -125,7 +130,7 @@ class DreamInterpretationServiceTest {
         when(dreamRecordMapper.selectList(any())).thenReturn(List.of());
 
         DreamInterpretResponse response = service.interpret(
-                new UserPrincipal(7L, "openid-1"),
+                new UserPrincipal(7L, "openid-1", "user"),
                 new DreamInterpretRequest("梦见月亮", List.of(), ""));
 
         assertThat(response.dreamRecordId()).isNull();
