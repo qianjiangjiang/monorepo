@@ -154,8 +154,13 @@ public class FavoriteService {
                 parsedResult.path("summary").asText(""),
                 record.getCreatedAt(),
                 parseTags(record.getTags()),
+                responseSchool(result),
                 true,
                 parsedResult);
+    }
+
+    private String responseSchool(DreamResult result) {
+        return StringUtils.hasText(result.getSchool()) ? result.getSchool() : "";
     }
 
     private JsonNode readResultJson(String resultJson) {

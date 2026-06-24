@@ -11,6 +11,7 @@ public record DreamHistoryItemResponse(
         String summary,
         LocalDateTime createdAt,
         List<String> tags,
+        String school,
         Boolean favorited,
         JsonNode result
 ) {

@@ -49,7 +49,7 @@ function replay() {
         <text class="page-subtitle">{{ record.dreamText }}</text>
       </view>
 
-      <ResultCards :result="result" />
+      <ResultCards :result="result" :preferred-school="record.school" />
 
       <view class="bottom-actions">
         <button class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite">

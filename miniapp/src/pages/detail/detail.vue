@@ -49,7 +49,7 @@ function goBack() {
         <text class="page-subtitle">{{ record.dreamText }}</text>
       </view>
 
-      <ResultCards :result="result" compact />
+      <ResultCards :result="result" :preferred-school="record.school" compact />
 
       <view class="detail-actions">
         <button class="secondary-action detail-button" hover-class="button-hover" @tap="toggleFavorite">

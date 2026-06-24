@@ -196,7 +196,7 @@ public class DreamInterpretationService {
         result.setStatus(outcome.status());
         dreamResultMapper.insert(result);
 
-        return new DreamInterpretResponse(record.getId(), result.getId(), outcome.result());
+        return new DreamInterpretResponse(record.getId(), result.getId(), school, outcome.result());
     }
 
     private AiOutcome completeWithGuardrails(String dreamText, List<String> tags, PromptRenderer.RenderedPrompt prompt) {
@@ -310,13 +310,14 @@ public class DreamInterpretationService {
                 请解读以下梦境：
                 {{dreamText}}
 
-                请求流派：{{school}}
+                流派展示偏好：{{school}}
 
                 输出要求：
                 1. 只输出一个 JSON 对象。
                 2. 字段必须符合 dream-result.schema.json。
-                3. interpretations 至少包含 school 为“传统文化”和“心理学”的两条。
-                4. fortune.disclaimer 固定表达为“%s”。
+                3. interpretations 必须同时包含 school 为“传统文化”和“心理学”的两条，即使用户有具体展示偏好也不要省略任一视角。
+                4. 若展示偏好为具体流派，展示层会优先呈现该流派；模型仍需输出双视角完整结果。
+                5. fortune.disclaimer 固定表达为“%s”。
                 """.formatted(DreamResultSanitizer.DISCLAIMER));
         template.setSchemaJson(DEFAULT_SCHEMA_HINT);
         return template;
@@ -369,8 +370,13 @@ public class DreamInterpretationService {
                 parsedResult == null ? "" : parsedResult.path("summary").asText(""),
                 record.getCreatedAt(),
                 parseTags(record.getTags()),
+                responseSchool(result),
                 result != null && favoriteIds.contains(result.getId()),
                 parsedResult);
+    }
+
+    private String responseSchool(DreamResult result) {
+        return result != null && StringUtils.hasText(result.getSchool()) ? result.getSchool() : "";
     }
 
     private JsonNode readResultJson(String resultJson) {
