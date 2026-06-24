@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -67,6 +67,7 @@ public class DreamInterpretationService {
     private final DreamQuotaService dreamQuotaService;
     private final DreamResultCacheService dreamResultCacheService;
     private final DreamResultSanitizer dreamResultSanitizer;
+    private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
     public DreamInterpretationService(
@@ -82,6 +83,7 @@ public class DreamInterpretationService {
             DreamQuotaService dreamQuotaService,
             DreamResultCacheService dreamResultCacheService,
             DreamResultSanitizer dreamResultSanitizer,
+            TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper) {
         this.dreamRecordMapper = dreamRecordMapper;
         this.dreamResultMapper = dreamResultMapper;
@@ -95,10 +97,10 @@ public class DreamInterpretationService {
         this.dreamQuotaService = dreamQuotaService;
         this.dreamResultCacheService = dreamResultCacheService;
         this.dreamResultSanitizer = dreamResultSanitizer;
+        this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
     }
 
-    @Transactional
     public DreamInterpretResponse interpret(UserPrincipal principal, DreamInterpretRequest request) {
         Long userId = principal.userId();
         String dreamText = request.dreamText().trim();
@@ -110,7 +112,7 @@ public class DreamInterpretationService {
         Optional<JsonNode> cachedResult = dreamResultCacheService.get(dreamText, tags, school)
                 .map(dreamResultSanitizer::withDisclaimer);
         if (cachedResult.isPresent()) {
-            return persistInterpretation(userId, dreamText, tags, school, new AiOutcome(
+            return persistInTransaction(userId, dreamText, tags, school, new AiOutcome(
                     cachedResult.get(), "cache", "cache", "success", 0, 0, "cache"));
         }
 
@@ -122,7 +124,7 @@ public class DreamInterpretationService {
         JsonNode result = dreamResultSanitizer.withDisclaimer(outcome.result());
         dreamResultCacheService.put(dreamText, tags, school, result);
 
-        return persistInterpretation(userId, dreamText, tags, school, new AiOutcome(
+        return persistInTransaction(userId, dreamText, tags, school, new AiOutcome(
                 result,
                 outcome.provider(),
                 outcome.model(),
@@ -130,6 +132,16 @@ public class DreamInterpretationService {
                 outcome.tokenIn(),
                 outcome.tokenOut(),
                 prompt.version()));
+    }
+
+    private DreamInterpretResponse persistInTransaction(
+            Long userId,
+            String dreamText,
+            List<String> tags,
+            String school,
+            AiOutcome outcome) {
+        return Objects.requireNonNull(transactionTemplate.execute(status ->
+                persistInterpretation(userId, dreamText, tags, school, outcome)));
     }
 
     public PageResponse<DreamHistoryItemResponse> history(Long userId, int page, int size) {

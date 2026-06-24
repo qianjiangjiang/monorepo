@@ -16,4 +16,6 @@ public @interface RateLimited {
     long windowSeconds();
 
     boolean includeIp() default true;
+
+    boolean byUser() default false;
 }

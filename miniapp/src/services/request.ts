@@ -26,6 +26,7 @@ interface RequestOptions {
   loading?: boolean
   loadingText?: string
   silent?: boolean
+  timeout?: number
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
@@ -84,6 +85,7 @@ export function request<T>(options: RequestOptions): Promise<T> {
     loading = true,
     loadingText = '加载中',
     silent = false,
+    timeout = 15000,
   } = options
   const token = getToken()
 
@@ -100,7 +102,7 @@ export function request<T>(options: RequestOptions): Promise<T> {
       url: normalizeUrl(url),
       method,
       data: data as UniApp.RequestOptions['data'],
-      timeout: 15000,
+      timeout,
       header: {
         'Content-Type': 'application/json',
         ...(auth && token ? { Authorization: `Bearer ${token}` } : {}),
