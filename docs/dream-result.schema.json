@@ -71,7 +71,7 @@
       "additionalProperties": false,
       "properties": {
         "tendency": { "type": "string", "description": "行动倾向，如『宜静观』『顺势而为』。不做吉凶绝对化断言" },
-        "disclaimer": { "type": "string", "description": "免责声明，固定提示解梦仅供自我觉察与娱乐参考" }
+        "disclaimer": { "type": "string", "description": "免责声明，固定为“解梦仅供自我觉察与娱乐参考，不构成现实判断或专业建议。”" }
       }
     },
     "suggestions": {

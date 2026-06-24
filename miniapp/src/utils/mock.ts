@@ -44,7 +44,7 @@ export function createMockDreamResult(payload: InterpretDreamPayload): DreamResu
     })),
     fortune: {
       tendency: payload.tags.includes('压力') ? '宜静观' : '顺势而为',
-      disclaimer: '解梦仅供自我觉察与娱乐参考，不作为现实决策、医疗或心理诊断依据。',
+      disclaimer: '解梦仅供自我觉察与娱乐参考，不构成现实判断或专业建议。',
     },
     suggestions: [
       '把梦里最强烈的一个画面写下来，记录它对应的现实感受。',
