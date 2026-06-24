@@ -4,10 +4,20 @@ import type { DreamResult, InterpretationSchool } from '../types/dream'
 
 const props = defineProps<{
   result: DreamResult
+  preferredSchool?: '' | InterpretationSchool
   compact?: boolean
 }>()
 
-const activeSchool = ref<InterpretationSchool>(props.result.interpretations[0]?.school || '传统文化')
+const visibleInterpretations = computed(() => {
+  if (!props.preferredSchool) {
+    return props.result.interpretations
+  }
+
+  const matched = props.result.interpretations.filter((item) => item.school === props.preferredSchool)
+  return matched.length > 0 ? matched : props.result.interpretations
+})
+
+const activeSchool = ref<InterpretationSchool>(visibleInterpretations.value[0]?.school || '传统文化')
 
 const toneLabel = computed(() => {
   const labels = {
@@ -21,15 +31,28 @@ const toneLabel = computed(() => {
 
 const activeInterpretation = computed(() => {
   return (
-    props.result.interpretations.find((item) => item.school === activeSchool.value) ||
-    props.result.interpretations[0]
+    visibleInterpretations.value.find((item) => item.school === activeSchool.value) ||
+    visibleInterpretations.value[0]
   )
 })
+
+const interpretationTitle = computed(() => {
+  return props.preferredSchool && visibleInterpretations.value.length === 1
+    ? `${props.preferredSchool}解读`
+    : '双视角解读'
+})
+
+watch(
+  visibleInterpretations,
+  (items) => {
+    activeSchool.value = items[0]?.school || '传统文化'
+  },
+)
 
 watch(
   () => props.result.title,
   () => {
-    activeSchool.value = props.result.interpretations[0]?.school || '传统文化'
+    activeSchool.value = visibleInterpretations.value[0]?.school || '传统文化'
   },
 )
 </script>
@@ -74,11 +97,11 @@ watch(
 
     <view class="glass-card result-card fade-card">
       <view class="card-head">
-        <text class="card-kicker">双视角解读</text>
+        <text class="card-kicker">{{ interpretationTitle }}</text>
       </view>
-      <view class="school-tabs">
+      <view v-if="visibleInterpretations.length > 1" class="school-tabs">
         <button
-          v-for="item in result.interpretations"
+          v-for="item in visibleInterpretations"
           :key="item.school"
           class="school-tab"
           :class="{ active: activeSchool === item.school }"

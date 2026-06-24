@@ -42,6 +42,7 @@ export interface DreamRecord {
   summary: string
   createdAt: string
   tags: string[]
+  school: '' | InterpretationSchool
   favorited?: boolean
   result: DreamResult
 }
@@ -55,6 +56,7 @@ export interface InterpretDreamPayload {
 export interface InterpretDreamResponse {
   dreamRecordId: number
   dreamResultId: number
+  school?: '' | InterpretationSchool
   result: DreamResult
 }
 

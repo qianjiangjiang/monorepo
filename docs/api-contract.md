@@ -24,15 +24,16 @@
 ```json
 { "dreamText": "梦见一条蛇...", "tags": ["反复出现"], "school": "" }
 ```
-- `school` 空 = 返回全部流派（一期含传统文化+心理学）。
+- `school` 表示客户端展示偏好；空 = 展示全部流派，指定 `传统文化` / `心理学` = 客户端优先展示该流派。
+- 后端结果仍始终返回双视角，`result.interpretations` 一期必须同时包含 `传统文化` + `心理学`。
 响应 data：
 ```json
-{ "dreamRecordId": 10, "dreamResultId": 20, "result": { /* dream-result.schema.json */ } }
+{ "dreamRecordId": 10, "dreamResultId": 20, "school": "心理学", "result": { /* dream-result.schema.json */ } }
 ```
 限流：按用户/IP；超每日免费次数返回 `429`。
 
 ### GET /api/dream/history?page=1&size=20
-响应 data：`{ "total": 100, "list": [ { "dreamRecordId":10, "dreamText":"", "summary":"", "createdAt":"" } ] }`
+响应 data：`{ "total": 100, "list": [ { "dreamRecordId":10, "dreamText":"", "summary":"", "createdAt":"", "school":"心理学" } ] }`
 
 ### GET /api/dream/{id}
 响应 data：`{ "dreamRecord": {...}, "result": { /* schema */ } }`

@@ -49,7 +49,7 @@
     "interpretations": {
       "type": "array",
       "description": "多流派解读，一期至少含『传统文化』与『心理学』两条",
-      "minItems": 1,
+      "minItems": 2,
       "items": {
         "type": "object",
         "required": ["school", "content"],

@@ -25,6 +25,10 @@ import {
   setUser,
 } from '../utils/storage'
 
+function normalizeSchool(school: string | null | undefined): '' | InterpretationSchool {
+  return school === '传统文化' || school === '心理学' || school === '现代象征' ? school : ''
+}
+
 interface DreamState {
   token: string
   user: UserProfile | null
@@ -101,6 +105,7 @@ export const useDreamStore = defineStore('dream', {
           summary: response.result.summary,
           createdAt: new Date().toISOString(),
           tags: this.pendingPayload.tags,
+          school: normalizeSchool(response.school || this.pendingPayload.school),
           favorited: false,
           result: response.result,
         }
@@ -116,6 +121,7 @@ export const useDreamStore = defineStore('dream', {
       const response = await getHistory()
       this.history = response.list.map((record) => ({
         ...record,
+        school: normalizeSchool(record.school),
         favorited: this.favoriteIds.includes(record.dreamResultId),
       }))
     },
@@ -123,6 +129,7 @@ export const useDreamStore = defineStore('dream', {
       const response = await getDreamDetail(id)
       const record = {
         ...response.dreamRecord,
+        school: normalizeSchool(response.dreamRecord.school),
         result: response.result,
         favorited: this.favoriteIds.includes(response.dreamRecord.dreamResultId),
       }

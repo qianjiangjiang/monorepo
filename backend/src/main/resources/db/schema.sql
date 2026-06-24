@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `dream_record` (
 CREATE TABLE IF NOT EXISTS `dream_result` (
   `id`              BIGINT      NOT NULL AUTO_INCREMENT,
   `dream_record_id` BIGINT      NOT NULL,
-  `school`          VARCHAR(32) DEFAULT NULL COMMENT '请求的解读流派，空=全部',
+  `school`          VARCHAR(32) DEFAULT NULL COMMENT '流派展示偏好，空=展示全部',
   `result_json`     JSON        NOT NULL COMMENT '结构化解梦结果',
   `provider`        VARCHAR(32) DEFAULT NULL COMMENT '实际使用渠道，如 deepseek',
   `model`           VARCHAR(64) DEFAULT NULL,

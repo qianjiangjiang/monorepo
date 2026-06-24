@@ -75,6 +75,7 @@ export async function interpretDream(payload: InterpretDreamPayload): Promise<In
   return {
     dreamRecordId: record.dreamRecordId,
     dreamResultId: record.dreamResultId,
+    school: record.school,
     result: record.result,
   }
 }

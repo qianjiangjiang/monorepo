@@ -8,7 +8,9 @@ import org.springframework.util.StringUtils;
 public class PromptRenderer {
 
     public RenderedPrompt render(PromptTemplate template, String dreamText, String school) {
-        String requestedSchool = StringUtils.hasText(school) ? school : "全部，必须包含传统文化与心理学";
+        String requestedSchool = StringUtils.hasText(school)
+                ? "全部，必须包含传统文化与心理学；用户展示偏好：" + school
+                : "全部，必须包含传统文化与心理学";
         return new RenderedPrompt(
                 template.getSystemPrompt(),
                 template.getUserPromptTemplate()

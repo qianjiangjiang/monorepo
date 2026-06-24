@@ -87,7 +87,7 @@ const promptForm = reactive<PromptForm>(newPromptForm())
 const sensitiveForm = reactive<SensitiveForm>(newSensitiveForm())
 const previewForm = reactive({
   dreamText: '梦见在水边寻找一扇门，远处有人叫我的名字。',
-  school: '传统文化 + 心理学',
+  school: '全部，必须包含传统文化与心理学；用户展示偏好：心理学',
 })
 
 const currentTab = computed(() => tabs.find((tab) => tab.key === activeTab.value) || tabs[0])
@@ -139,7 +139,8 @@ function newPromptForm(): PromptForm {
     sceneCode: 'interpret',
     version: 'v1',
     systemPrompt: '',
-    userPromptTemplate: '请解读以下梦境：\n{{dreamText}}\n\n请求流派：{{school}}',
+    userPromptTemplate:
+      '请解读以下梦境：\n{{dreamText}}\n\n流派展示偏好：{{school}}\n\ninterpretations 必须同时包含“传统文化”和“心理学”两条。',
     schemaJson: '',
     enabled: true,
     remark: '',

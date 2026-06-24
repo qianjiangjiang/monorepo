@@ -21,7 +21,7 @@ export function createMockDreamResult(payload: InterpretDreamPayload): DreamResu
     .filter((item) => text.includes(item.keyword) || payload.tags.includes(item.keyword))
     .concat(symbolPool)
     .slice(0, 3)
-  const selectedSchools = payload.school ? [payload.school] : schools.slice(0, 2)
+  const selectedSchools = schools.slice(0, 2)
 
   return {
     title: text.length > 0 ? `关于「${text.slice(0, 8)}」的解读` : '关于梦境的解读',
@@ -66,6 +66,7 @@ export function createDreamRecord(payload: InterpretDreamPayload): DreamRecord {
     summary: result.summary,
     createdAt: new Date(now).toISOString(),
     tags: payload.tags,
+    school: payload.school,
     favorited: false,
     result,
   }
