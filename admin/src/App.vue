@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 import {
   CirclePlus,
   Connection,
@@ -17,6 +18,7 @@ import {
 } from '@element-plus/icons-vue'
 import {
   ApiError,
+  adminLogin,
   apiBaseUrl,
   clearToken,
   getToken,
@@ -58,7 +60,8 @@ const tabs: Array<{ key: TabKey; label: string; icon: typeof Connection; subtitl
 
 const activeTab = ref<TabKey>('ai')
 const isAuthed = ref(Boolean(getToken()))
-const loginForm = reactive({ token: getToken() })
+const loginForm = reactive({ username: '', password: '' })
+const loginLoading = ref(false)
 const loading = reactive<Record<LoadingKey, boolean>>({
   ai: false,
   prompt: false,
@@ -76,6 +79,7 @@ const recordsPage = reactive({ page: 1, size: 10, total: 0 })
 const providerDrawerVisible = ref(false)
 const promptDrawerVisible = ref(false)
 const sensitiveDrawerVisible = ref(false)
+const bulkSensitiveDrawerVisible = ref(false)
 const testingProviderId = ref<number | null>(null)
 const recordDrawer = reactive<{ visible: boolean; record: AdminDreamRecord | null }>({
   visible: false,
@@ -85,17 +89,31 @@ const recordDrawer = reactive<{ visible: boolean; record: AdminDreamRecord | nul
 const providerForm = reactive<ProviderForm>(newProviderForm())
 const promptForm = reactive<PromptForm>(newPromptForm())
 const sensitiveForm = reactive<SensitiveForm>(newSensitiveForm())
+const sensitiveBulkForm = reactive({ words: '', type: 'block' })
 const previewForm = reactive({
   dreamText: '梦见在水边寻找一扇门，远处有人叫我的名字。',
   school: '全部，必须包含传统文化与心理学；用户展示偏好：心理学',
 })
 
+const router = useRouter()
+const route = useRoute()
+
 const currentTab = computed(() => tabs.find((tab) => tab.key === activeTab.value) || tabs[0])
+const showingLogin = computed(() => route.name === 'login' || !isAuthed.value)
 const totalProviderWeight = computed(() => providers.value.reduce((sum, item) => sum + Number(item.weight || 0), 0))
 const enabledProviderCount = computed(() => providers.value.filter((item) => item.enabled).length)
 const enabledPromptCount = computed(() => prompts.value.filter((item) => item.enabled).length)
 const blockSensitiveCount = computed(() => sensitiveWords.value.filter((item) => item.type === 'block').length)
 const reviewSensitiveCount = computed(() => sensitiveWords.value.filter((item) => item.type === 'review').length)
+const promptSceneRowspans = computed(() =>
+  prompts.value.map((prompt, index, list) => {
+    if (index > 0 && list[index - 1].sceneCode === prompt.sceneCode) {
+      return 0
+    }
+    const nextSceneIndex = list.slice(index).findIndex((item) => item.sceneCode !== prompt.sceneCode)
+    return nextSceneIndex === -1 ? list.length - index : nextSceneIndex
+  }),
+)
 const promptPreviewUser = computed(() =>
   renderPrompt(promptForm.userPromptTemplate, previewForm.dreamText, previewForm.school),
 )
@@ -155,21 +173,37 @@ function newSensitiveForm(): SensitiveForm {
   }
 }
 
-function submitLogin() {
-  const token = loginForm.token.trim()
-  if (!token) {
-    ElMessage.warning('请输入管理员 Token')
+async function submitLogin() {
+  if (!loginForm.username.trim() || !loginForm.password) {
+    ElMessage.warning('请输入管理员账号和密码')
     return
   }
-  setToken(token)
-  isAuthed.value = true
-  void loadDashboard()
+  loginLoading.value = true
+  try {
+    const result = await adminLogin(loginForm.username.trim(), loginForm.password)
+    if (result.role !== 'admin') {
+      throw new ApiError('当前账号不是管理员', 401, 401)
+    }
+    setToken(result.token)
+    isAuthed.value = true
+    await router.replace({ name: 'console' })
+    await loadDashboard()
+    ElMessage.success('登录成功')
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.code === 401)) {
+      ElMessage.error('管理员账号或密码错误')
+    } else {
+      handleApiError(error)
+    }
+  } finally {
+    loginLoading.value = false
+  }
 }
 
 function logout() {
   clearToken()
-  loginForm.token = ''
   isAuthed.value = false
+  void router.replace({ name: 'login' })
 }
 
 function handleMenuSelect(key: string) {
@@ -198,6 +232,7 @@ function handleApiError(error: unknown) {
   if (error instanceof ApiError && (error.status === 401 || error.code === 401)) {
     clearToken()
     isAuthed.value = false
+    void router.replace({ name: 'login' })
     ElMessage.error('登录已失效')
     return
   }
@@ -232,11 +267,13 @@ async function loadRecords() {
   })
 }
 
-async function refreshConfig() {
+async function refreshConfig(showMessage = true) {
   loading.refresh = true
   try {
     await request<{ refreshed: boolean }>('/admin/ai/refresh', { method: 'POST' })
-    ElMessage.success('配置缓存已刷新')
+    if (showMessage) {
+      ElMessage.success('配置缓存已刷新')
+    }
   } catch (error) {
     handleApiError(error)
   } finally {
@@ -281,6 +318,7 @@ async function saveProvider() {
   const payload = providerPayload(providerForm)
   try {
     await request<AiProviderConfig>('/admin/ai/config', { method: 'POST', body: payload })
+    await refreshConfig(false)
     providerDrawerVisible.value = false
     ElMessage.success('AI 渠道已保存')
     await loadProviders()
@@ -297,6 +335,7 @@ async function setProviderEnabled(row: AiProviderConfig, value: string | number 
       method: 'POST',
       body: providerPayload({ ...row, apiKey: '' }),
     })
+    await refreshConfig(false)
     ElMessage.success(row.enabled ? '渠道已启用' : '渠道已停用')
   } catch (error) {
     row.enabled = previous
@@ -308,6 +347,7 @@ async function deleteProvider(row: AiProviderConfig) {
   try {
     await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除 AI 渠道', { type: 'warning' })
     await request<void>(`/admin/ai/config/${row.id}`, { method: 'DELETE' })
+    await refreshConfig(false)
     ElMessage.success('AI 渠道已删除')
     await loadProviders()
   } catch (error) {
@@ -377,6 +417,7 @@ async function savePrompt() {
   }
   try {
     await request<PromptTemplate>('/admin/prompt', { method: 'POST', body: promptPayload(promptForm) })
+    await refreshConfig(false)
     promptDrawerVisible.value = false
     ElMessage.success('提示词模板已保存')
     await loadPrompts()
@@ -393,6 +434,7 @@ async function setPromptEnabled(row: PromptTemplate, value: string | number | bo
       method: 'POST',
       body: promptPayload({ ...row, schemaJson: row.schemaJson || '', remark: row.remark || '' }),
     })
+    await refreshConfig(false)
     ElMessage.success(row.enabled ? '模板已启用' : '模板已停用')
   } catch (error) {
     row.enabled = previous
@@ -404,6 +446,7 @@ async function deletePrompt(row: PromptTemplate) {
   try {
     await ElMessageBox.confirm(`确认删除「${row.sceneCode} / ${row.version}」？`, '删除提示词模板', { type: 'warning' })
     await request<void>(`/admin/prompt/${row.id}`, { method: 'DELETE' })
+    await refreshConfig(false)
     ElMessage.success('提示词模板已删除')
     await loadPrompts()
   } catch (error) {
@@ -431,6 +474,12 @@ function openCreateSensitiveWord() {
   sensitiveDrawerVisible.value = true
 }
 
+function openBulkSensitiveWords() {
+  sensitiveBulkForm.words = ''
+  sensitiveBulkForm.type = 'block'
+  bulkSensitiveDrawerVisible.value = true
+}
+
 function openEditSensitiveWord(row: SensitiveWord) {
   Object.assign(sensitiveForm, {
     id: row.id,
@@ -449,6 +498,32 @@ async function saveSensitiveWord() {
     await request<SensitiveWord>('/admin/sensitive', { method: 'POST', body: sensitivePayload(sensitiveForm) })
     sensitiveDrawerVisible.value = false
     ElMessage.success('敏感词已保存')
+    await loadSensitiveWords()
+  } catch (error) {
+    handleApiError(error)
+  }
+}
+
+async function saveBulkSensitiveWords() {
+  const words = Array.from(new Set(
+    sensitiveBulkForm.words
+      .split(/[\n,，;；]+/)
+      .map((word) => word.trim())
+      .filter(Boolean),
+  ))
+  if (words.length === 0) {
+    ElMessage.warning('请输入要批量新增的敏感词')
+    return
+  }
+  try {
+    for (const word of words) {
+      await request<SensitiveWord>('/admin/sensitive', {
+        method: 'POST',
+        body: { word, type: sensitiveBulkForm.type },
+      })
+    }
+    bulkSensitiveDrawerVisible.value = false
+    ElMessage.success(`已新增 ${words.length} 个敏感词`)
     await loadSensitiveWords()
   } catch (error) {
     handleApiError(error)
@@ -517,30 +592,45 @@ function formatDate(value: string | null | undefined) {
 function tokenTotal(row: AdminDreamRecord) {
   return Number(row.tokenIn || 0) + Number(row.tokenOut || 0)
 }
+
+function spanPromptScene({ rowIndex, columnIndex }: { rowIndex: number; columnIndex: number }) {
+  if (columnIndex !== 0) {
+    return { rowspan: 1, colspan: 1 }
+  }
+  const rowspan = promptSceneRowspans.value[rowIndex] || 0
+  return { rowspan, colspan: rowspan === 0 ? 0 : 1 }
+}
 </script>
 
 <template>
-  <main v-if="!isAuthed" class="login-shell">
+  <main v-if="showingLogin" class="login-shell">
     <section class="login-panel" aria-labelledby="login-title">
       <div class="brand">
         <span class="brand-mark">D</span>
         <div>
           <h1 id="login-title">解梦管理端</h1>
-          <p>{{ apiBaseUrl() }}</p>
+          <p>管理员账号登录 · {{ apiBaseUrl() }}</p>
         </div>
       </div>
 
       <el-form class="login-form" :model="loginForm" label-position="top" @submit.prevent="submitLogin">
-        <el-form-item label="管理员 Token">
+        <el-form-item label="管理员账号">
           <el-input
-            v-model="loginForm.token"
-            type="textarea"
-            :autosize="{ minRows: 4, maxRows: 7 }"
-            placeholder="Bearer JWT"
+            v-model="loginForm.username"
+            autocomplete="username"
+            placeholder="admin"
             clearable
           />
         </el-form-item>
-        <el-button class="login-button" size="large" type="primary" native-type="submit">
+        <el-form-item label="密码">
+          <el-input
+            v-model="loginForm.password"
+            autocomplete="current-password"
+            placeholder="password"
+            show-password
+          />
+        </el-form-item>
+        <el-button class="login-button" size="large" type="primary" native-type="submit" :loading="loginLoading">
           <el-icon><Lock /></el-icon>
           登录
         </el-button>
@@ -573,7 +663,7 @@ function tokenTotal(row: AdminDreamRecord) {
           <p>{{ currentTab.subtitle }}</p>
         </div>
         <div class="topbar-actions">
-          <el-button :icon="Refresh" :loading="loading.refresh" @click="refreshConfig">刷新配置缓存</el-button>
+          <el-button :icon="Refresh" :loading="loading.refresh" @click="() => refreshConfig()">刷新配置缓存</el-button>
           <el-button :icon="SwitchButton" @click="logout">退出</el-button>
         </div>
       </el-header>
@@ -642,7 +732,7 @@ function tokenTotal(row: AdminDreamRecord) {
             </div>
           </div>
 
-          <el-table v-loading="loading.prompt" :data="prompts" height="calc(100vh - 184px)" border>
+          <el-table v-loading="loading.prompt" :data="prompts" :span-method="spanPromptScene" height="calc(100vh - 184px)" border>
             <el-table-column prop="sceneCode" label="场景" min-width="130" fixed />
             <el-table-column prop="version" label="版本" min-width="130" />
             <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
@@ -679,6 +769,7 @@ function tokenTotal(row: AdminDreamRecord) {
             <div class="toolbar-actions">
               <el-button :icon="Refresh" :loading="loading.sensitive" @click="loadSensitiveWords">刷新</el-button>
               <el-button type="primary" :icon="CirclePlus" @click="openCreateSensitiveWord">新增词条</el-button>
+              <el-button type="primary" plain :icon="CirclePlus" @click="openBulkSensitiveWords">批量新增</el-button>
             </div>
           </div>
 
@@ -886,6 +977,26 @@ function tokenTotal(row: AdminDreamRecord) {
     <template #footer>
       <el-button @click="sensitiveDrawerVisible = false">取消</el-button>
       <el-button type="primary" @click="saveSensitiveWord">保存</el-button>
+    </template>
+  </el-drawer>
+
+  <el-drawer v-model="bulkSensitiveDrawerVisible" title="批量新增敏感词" size="460px">
+    <el-form class="drawer-form" :model="sensitiveBulkForm" label-position="top">
+      <el-form-item label="类型">
+        <el-segmented v-model="sensitiveBulkForm.type" :options="sensitiveTypeOptions" />
+      </el-form-item>
+      <el-form-item label="敏感词">
+        <el-input
+          v-model="sensitiveBulkForm.words"
+          type="textarea"
+          :autosize="{ minRows: 10, maxRows: 18 }"
+          placeholder="每行一个，也可用逗号或分号分隔"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="bulkSensitiveDrawerVisible = false">取消</el-button>
+      <el-button type="primary" @click="saveBulkSensitiveWords">保存</el-button>
     </template>
   </el-drawer>
 
