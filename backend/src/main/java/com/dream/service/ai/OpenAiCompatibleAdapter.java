@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -22,6 +23,7 @@ public abstract class OpenAiCompatibleAdapter implements AiProvider {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private final ObjectMapper objectMapper;
+    private final Map<Integer, OkHttpClient> clientsByTimeout = new ConcurrentHashMap<>();
 
     protected OpenAiCompatibleAdapter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -32,11 +34,7 @@ public abstract class OpenAiCompatibleAdapter implements AiProvider {
         if (!StringUtils.hasText(apiKey)) {
             throw new AiProviderException("api key is empty");
         }
-        OkHttpClient client = new OkHttpClient.Builder()
-                .callTimeout(Duration.ofMillis(timeoutMs(config)))
-                .connectTimeout(Duration.ofMillis(timeoutMs(config)))
-                .readTimeout(Duration.ofMillis(timeoutMs(config)))
-                .build();
+        OkHttpClient client = clientsByTimeout.computeIfAbsent(timeoutMs(config), this::buildClient);
         try {
             String responseJson = execute(client, config, apiKey, request);
             return parseResponse(responseJson);
@@ -108,5 +106,14 @@ public abstract class OpenAiCompatibleAdapter implements AiProvider {
 
     private int timeoutMs(AiProviderConfig config) {
         return config.getTimeoutMs() == null ? 30000 : config.getTimeoutMs();
+    }
+
+    private OkHttpClient buildClient(int timeoutMs) {
+        Duration timeout = Duration.ofMillis(timeoutMs);
+        return new OkHttpClient.Builder()
+                .callTimeout(timeout)
+                .connectTimeout(timeout)
+                .readTimeout(timeout)
+                .build();
     }
 }

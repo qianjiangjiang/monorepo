@@ -22,6 +22,10 @@ public final class CurrentUserContext {
         return principal;
     }
 
+    public static UserPrincipal get() {
+        return CURRENT.get();
+    }
+
     public static void clear() {
         CURRENT.remove();
     }

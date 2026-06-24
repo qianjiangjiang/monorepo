@@ -34,16 +34,19 @@ public class AdminContentService {
     private final SensitiveWordMapper sensitiveWordMapper;
     private final DreamRecordMapper dreamRecordMapper;
     private final DreamResultMapper dreamResultMapper;
+    private final SensitiveWordCache sensitiveWordCache;
     private final ObjectMapper objectMapper;
 
     public AdminContentService(
             SensitiveWordMapper sensitiveWordMapper,
             DreamRecordMapper dreamRecordMapper,
             DreamResultMapper dreamResultMapper,
+            SensitiveWordCache sensitiveWordCache,
             ObjectMapper objectMapper) {
         this.sensitiveWordMapper = sensitiveWordMapper;
         this.dreamRecordMapper = dreamRecordMapper;
         this.dreamResultMapper = dreamResultMapper;
+        this.sensitiveWordCache = sensitiveWordCache;
         this.objectMapper = objectMapper;
     }
 
@@ -68,12 +71,14 @@ public class AdminContentService {
         } else {
             sensitiveWordMapper.updateById(sensitiveWord);
         }
+        sensitiveWordCache.refresh();
         return SensitiveWordResponse.from(sensitiveWord);
     }
 
     @Transactional
     public void deleteSensitiveWord(Long id) {
         sensitiveWordMapper.deleteById(id);
+        sensitiveWordCache.refresh();
     }
 
     public PageResponse<AdminDreamRecordResponse> listDreamRecords(int page, int size) {

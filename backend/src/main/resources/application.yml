@@ -36,7 +36,7 @@ mybatis-plus:
 dream:
   jwt:
     issuer: dream-miniapp
-    secret: ${DREAM_JWT_SECRET:local-dev-secret-change-me-at-least-32-bytes}
+    secret: ${DREAM_JWT_SECRET:}
     expiration: 30d
   wx:
     app-id: ${WECHAT_APP_ID:}
@@ -50,8 +50,11 @@ dream:
   interpret:
     daily-free-limit: ${DREAM_INTERPRET_DAILY_FREE_LIMIT:5}
     cache-ttl-seconds: ${DREAM_INTERPRET_CACHE_TTL_SECONDS:86400}
+  admin:
+    username: ${DREAM_ADMIN_USERNAME:}
+    password: ${DREAM_ADMIN_PASSWORD:}
   rate-limit:
     default-window: 60s
   ai:
     default-provider: deepseek
-    encryption-key: ${DREAM_AI_CONFIG_SECRET:}
+    encryption-key: ${DREAM_AI_ENCRYPTION_KEY:${DREAM_AI_CONFIG_SECRET:}}

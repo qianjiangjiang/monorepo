@@ -64,6 +64,7 @@ export async function interpretDream(payload: InterpretDreamPayload): Promise<In
       method: 'POST',
       data: payload,
       loading: false,
+      timeout: 60000,
     })
   }
 

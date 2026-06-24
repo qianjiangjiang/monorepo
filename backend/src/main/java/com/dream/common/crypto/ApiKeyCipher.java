@@ -1,9 +1,9 @@
 package com.dream.common.crypto;
 
-import com.dream.common.auth.JwtProperties;
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
 import com.dream.config.AiProperties;
+import com.dream.config.SecretKeyPolicy;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -25,10 +25,11 @@ public class ApiKeyCipher {
     private final SecureRandom secureRandom = new SecureRandom();
     private final SecretKeySpec secretKey;
 
-    public ApiKeyCipher(AiProperties aiProperties, JwtProperties jwtProperties) {
-        String keyMaterial = StringUtils.hasText(aiProperties.getEncryptionKey())
-                ? aiProperties.getEncryptionKey()
-                : jwtProperties.getSecret();
+    public ApiKeyCipher(AiProperties aiProperties) {
+        String keyMaterial = SecretKeyPolicy.requireStrongSecret(
+                "dream.ai.encryption-key",
+                aiProperties.getEncryptionKey(),
+                AiProperties.PLACEHOLDER_ENCRYPTION_KEYS);
         this.secretKey = new SecretKeySpec(sha256(keyMaterial), "AES");
     }
 

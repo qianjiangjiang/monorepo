@@ -1,14 +1,14 @@
 # 接口契约（M0 冻结草案）
 
 - BasePath：`/api`
-- 鉴权：除 `wxLogin` 外均需 `Authorization: Bearer <JWT>`
+- 鉴权：除 `wxLogin` 外均需 `Authorization: Bearer <JWT>`；`/api/admin/**` 还要求 JWT 中 `role=admin`
 - 统一返回体：
 
 ```json
 { "code": 0, "message": "ok", "data": {} }
 ```
 
-- 错误码约定：`0` 成功；`401` 未登录/Token 失效；`429` 限流/次数用尽；`4xx` 业务错误；`500` 服务异常。
+- 错误码约定：`0` 成功；`401` 未登录/Token 失效；`403` 非管理员访问管理端；`429` 限流/次数用尽；`4xx` 业务错误；`500` 服务异常。
 - 解梦结果 `data` 结构以 `docs/dream-result.schema.json` 为唯一事实来源。
 
 ## 1. 鉴权
@@ -16,6 +16,11 @@
 ### POST /api/auth/wxLogin
 请求：`{ "code": "<wx.login code>" }`
 响应 data：`{ "token": "<jwt>", "user": { "id":1, "nickname":"", "avatar":"" } }`
+
+### POST /api/auth/adminLogin
+请求：`{ "username": "<admin>", "password": "<password>" }`
+响应 data：`{ "token": "<admin jwt>", "role": "admin" }`
+说明：管理端使用该接口登录；后端通过 `dream.admin.username/password`（或 `DREAM_ADMIN_USERNAME/PASSWORD`）配置管理员账号。
 
 ## 2. 解梦
 

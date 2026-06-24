@@ -6,9 +6,9 @@ import type { DreamRecord, InterpretationSchool } from '../../types/dream'
 
 const store = useDreamStore()
 const schoolOptions: Array<{ label: string; value: '' | InterpretationSchool }> = [
-  { label: '双视角', value: '' },
-  { label: '传统文化', value: '传统文化' },
-  { label: '心理学', value: '心理学' },
+  { label: '默认', value: '' },
+  { label: '传统优先', value: '传统文化' },
+  { label: '心理优先', value: '心理学' },
 ]
 
 const avatarText = computed(() => store.user?.nickname?.slice(0, 1) || '星')
@@ -66,7 +66,7 @@ function goHome() {
 
       <view class="glass-panel section-card">
         <view class="section-row">
-          <text class="section-title">流派偏好</text>
+          <text class="section-title">显示偏好</text>
         </view>
         <view class="school-grid">
           <button
