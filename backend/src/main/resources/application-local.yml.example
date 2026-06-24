@@ -21,6 +21,9 @@ dream:
   interpret:
     daily-free-limit: 5
     cache-ttl-seconds: 86400
+  admin:
+    username: admin
+    password: change-me
   ai:
     encryption-key: replace-with-a-32-byte-ai-encryption-key
     deepseek:

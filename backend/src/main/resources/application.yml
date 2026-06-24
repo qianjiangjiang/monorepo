@@ -50,6 +50,9 @@ dream:
   interpret:
     daily-free-limit: ${DREAM_INTERPRET_DAILY_FREE_LIMIT:5}
     cache-ttl-seconds: ${DREAM_INTERPRET_CACHE_TTL_SECONDS:86400}
+  admin:
+    username: ${DREAM_ADMIN_USERNAME:}
+    password: ${DREAM_ADMIN_PASSWORD:}
   rate-limit:
     default-window: 60s
   ai:

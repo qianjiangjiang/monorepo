@@ -1,12 +1,10 @@
 package com.dream.service;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
-import com.dream.domain.SensitiveWord;
-import com.dream.mapper.SensitiveWordMapper;
 import com.dream.service.wechat.WechatClient;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,11 +13,11 @@ public class ContentSafetyService {
 
     private static final int WECHAT_CHUNK_SIZE = 2000;
 
-    private final SensitiveWordMapper sensitiveWordMapper;
+    private final SensitiveWordCache sensitiveWordCache;
     private final WechatClient wechatClient;
 
-    public ContentSafetyService(SensitiveWordMapper sensitiveWordMapper, WechatClient wechatClient) {
-        this.sensitiveWordMapper = sensitiveWordMapper;
+    public ContentSafetyService(SensitiveWordCache sensitiveWordCache, WechatClient wechatClient) {
+        this.sensitiveWordCache = sensitiveWordCache;
         this.wechatClient = wechatClient;
     }
 
@@ -33,12 +31,9 @@ public class ContentSafetyService {
         if (!StringUtils.hasText(content)) {
             return;
         }
-        String lowerContent = content.toLowerCase();
-        List<SensitiveWord> words = sensitiveWordMapper.selectList(Wrappers.<SensitiveWord>query()
-                .select("word"));
-        for (SensitiveWord sensitiveWord : words) {
-            String word = sensitiveWord.getWord();
-            if (StringUtils.hasText(word) && lowerContent.contains(word.trim().toLowerCase())) {
+        String lowerContent = content.toLowerCase(Locale.ROOT);
+        for (String word : sensitiveWordCache.getWords()) {
+            if (lowerContent.contains(word)) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "content contains sensitive word");
             }
         }

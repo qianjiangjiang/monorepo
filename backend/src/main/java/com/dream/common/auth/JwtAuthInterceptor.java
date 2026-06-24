@@ -12,6 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class JwtAuthInterceptor implements HandlerInterceptor {
 
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ADMIN_PATH_PREFIX = "/api/admin/";
 
     private final JwtService jwtService;
 
@@ -26,8 +27,21 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         String token = authorization.substring(BEARER_PREFIX.length()).trim();
-        CurrentUserContext.set(jwtService.parseToken(token));
+        UserPrincipal principal = jwtService.parseToken(token);
+        if (isAdminPath(request) && !principal.isAdmin()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        CurrentUserContext.set(principal);
         return true;
+    }
+
+    private boolean isAdminPath(HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        String requestUri = request.getRequestURI();
+        String path = contextPath == null || contextPath.isEmpty()
+                ? requestUri
+                : requestUri.substring(contextPath.length());
+        return path.startsWith(ADMIN_PATH_PREFIX);
     }
 
     @Override

@@ -18,6 +18,9 @@ import org.springframework.util.StringUtils;
 @Service
 public class JwtService {
 
+    private static final String ROLE_USER = "user";
+    private static final String ROLE_ADMIN = "admin";
+
     private final JwtProperties properties;
 
     public JwtService(JwtProperties properties) {
