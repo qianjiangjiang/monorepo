@@ -110,7 +110,6 @@ public class DreamResultSchemaValidator {
         }
         rejectAdditionalFields(fortune, FORTUNE_FIELDS, "root.fortune", errors);
         requireText(fortune, "tendency", "root.fortune", errors);
-        requireText(fortune, "disclaimer", "root.fortune", errors);
     }
 
     private void validateStringArray(JsonNode array, String path, boolean required, List<String> errors) {

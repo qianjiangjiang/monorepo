@@ -69,28 +69,16 @@ public class AiProviderRouter {
 
         List<AiProviderConfig> ordered = new ArrayList<>();
         for (List<AiProviderConfig> group : byPriority.values()) {
-            preferDefaultProvider(group);
             ordered.addAll(weightedOrder(group));
         }
         return ordered;
-    }
-
-    private void preferDefaultProvider(List<AiProviderConfig> group) {
-        group.sort((left, right) -> {
-            boolean leftDefault = aiProperties.getDefaultProvider().equalsIgnoreCase(left.getProvider());
-            boolean rightDefault = aiProperties.getDefaultProvider().equalsIgnoreCase(right.getProvider());
-            if (leftDefault == rightDefault) {
-                return 0;
-            }
-            return leftDefault ? -1 : 1;
-        });
     }
 
     private List<AiProviderConfig> weightedOrder(List<AiProviderConfig> source) {
         List<AiProviderConfig> remaining = new ArrayList<>(source);
         List<AiProviderConfig> ordered = new ArrayList<>();
         while (!remaining.isEmpty()) {
-            int totalWeight = remaining.stream().mapToInt(config -> Math.max(0, config.getWeight() == null ? 100 : config.getWeight())).sum();
+            int totalWeight = remaining.stream().mapToInt(this::effectiveWeight).sum();
             if (totalWeight <= 0) {
                 ordered.addAll(remaining);
                 break;
@@ -99,7 +87,7 @@ public class AiProviderRouter {
             int cursor = 0;
             for (int index = 0; index < remaining.size(); index++) {
                 AiProviderConfig config = remaining.get(index);
-                cursor += Math.max(0, config.getWeight() == null ? 100 : config.getWeight());
+                cursor += effectiveWeight(config);
                 if (pick < cursor) {
                     ordered.add(remaining.remove(index));
                     break;
@@ -107,5 +95,13 @@ public class AiProviderRouter {
             }
         }
         return ordered;
+    }
+
+    private int effectiveWeight(AiProviderConfig config) {
+        int weight = Math.max(0, config.getWeight() == null ? 100 : config.getWeight());
+        if (weight == 0 || aiProperties.getDefaultProvider() == null || config.getProvider() == null) {
+            return weight;
+        }
+        return aiProperties.getDefaultProvider().equalsIgnoreCase(config.getProvider()) ? weight * 2 : weight;
     }
 }

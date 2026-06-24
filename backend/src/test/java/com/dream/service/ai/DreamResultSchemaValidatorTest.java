@@ -69,6 +69,32 @@ class DreamResultSchemaValidatorTest {
     }
 
     @Test
+    void acceptsResultWithoutFortuneDisclaimerBeforeSanitizing() throws Exception {
+        JsonNode node = objectMapper.readTree("""
+                {
+                  "title": "关于梦境的解读",
+                  "summary": "这可能提示近期心境变化。",
+                  "overallTone": "neutral",
+                  "symbols": [{"keyword": "水", "meaning": "情绪流动"}],
+                  "emotion": {"primary": "平静", "description": "情绪较稳定。"},
+                  "interpretations": [
+                    {"school": "传统文化", "content": "可视为顺势而为的提示。"},
+                    {"school": "心理学", "content": "心理学上可能对应情绪流动。"}
+                  ],
+                  "fortune": {
+                    "tendency": "顺势而为"
+                  },
+                  "suggestions": ["保持记录"]
+                }
+                """);
+
+        DreamValidationResult result = validator.validate(node);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @Test
     void acceptsSensitiveContentSafeFallbackJson() throws Exception {
         JsonNode node = objectMapper.readTree("""
                 {

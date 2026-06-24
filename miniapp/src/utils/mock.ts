@@ -86,8 +86,8 @@ export function createSeedHistory(): DreamRecord[] {
     }),
   ].map((record, index) => ({
     ...record,
-    dreamRecordId: record.dreamRecordId - index * 86400000,
-    dreamResultId: record.dreamResultId - index * 86400000,
+    dreamRecordId: (record.dreamRecordId ?? Date.now()) - index * 86400000,
+    dreamResultId: (record.dreamResultId ?? Date.now()) - index * 86400000,
     createdAt: new Date(Date.now() - index * 86400000).toISOString(),
   }))
 }

@@ -8,7 +8,7 @@ AI 解梦微信小程序：用户输入梦境，AI 返回**结构化解梦报告
 - **后端**：Spring Boot 3.x + MyBatis-Plus + MySQL + Redis
 - **AI**：默认主力 **DeepSeek**，多渠道可配置 + 兜底降级，JSON 结构化输出
 - **解读流派**：一期含「传统文化 + 心理学」双视角
-- **管理端**：一期含可视化管理端（AI 渠道 / 提示词 / 敏感词 / 解梦记录）
+- **管理端**：M5 待交付；当前 `admin/` 仅作为后续可视化管理端承载目录
 
 ## 仓库结构
 
@@ -16,7 +16,7 @@ AI 解梦微信小程序：用户输入梦境，AI 返回**结构化解梦报告
 .
 ├── backend/    Spring Boot 后端服务（API + AI 引擎 + 配置热加载）
 ├── miniapp/    uni-app 微信小程序前端
-├── admin/      可视化管理端（Vue3 + Element-Plus）
+├── admin/      M5 可视化管理端承载目录（非当前已交付功能）
 └── docs/       契约与设计文档（M0 冻结）
     ├── architecture.md           架构与模块划分
     ├── api-contract.md           接口契约
@@ -47,7 +47,7 @@ cd miniapp
 npm install
 npm run dev:mp-weixin
 
-# admin
+# admin（M5 待交付，当前为承载目录）
 cd admin
 npm install
 npm run dev

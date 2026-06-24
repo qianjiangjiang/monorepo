@@ -21,6 +21,9 @@ function formatTime(value: string) {
 }
 
 function openDetail(record: DreamRecord) {
+  if (typeof record.dreamRecordId !== 'number') {
+    return
+  }
   uni.navigateTo({ url: `/pages/detail/detail?id=${record.dreamRecordId}` })
 }
 
@@ -41,7 +44,12 @@ function goHome() {
       </view>
 
       <view v-if="history.length" class="timeline">
-        <view v-for="record in history" :key="record.dreamRecordId" class="timeline-row" @tap="openDetail(record)">
+        <view
+          v-for="record in history"
+          :key="record.dreamRecordId ?? record.createdAt"
+          class="timeline-row"
+          @tap="openDetail(record)"
+        >
           <view class="time-rail">
             <view class="time-dot"></view>
             <view class="time-line"></view>

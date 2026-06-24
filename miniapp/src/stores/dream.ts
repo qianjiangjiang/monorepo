@@ -58,7 +58,7 @@ export const useDreamStore = defineStore('dream', {
     isLoggedIn: (state) => Boolean(state.token),
     isCurrentFavorite: (state) => {
       const id = state.currentRecord?.dreamResultId
-      return Boolean(id && state.favoriteIds.includes(id))
+      return typeof id === 'number' && state.favoriteIds.includes(id)
     },
   },
   actions: {
@@ -122,7 +122,7 @@ export const useDreamStore = defineStore('dream', {
       this.history = response.list.map((record) => ({
         ...record,
         school: normalizeSchool(record.school),
-        favorited: this.favoriteIds.includes(record.dreamResultId),
+        favorited: typeof record.dreamResultId === 'number' && this.favoriteIds.includes(record.dreamResultId),
       }))
     },
     async loadDetail(id: number) {
@@ -131,23 +131,26 @@ export const useDreamStore = defineStore('dream', {
         ...response.dreamRecord,
         school: normalizeSchool(response.dreamRecord.school),
         result: response.result,
-        favorited: this.favoriteIds.includes(response.dreamRecord.dreamResultId),
+        favorited:
+          typeof response.dreamRecord.dreamResultId === 'number' &&
+          this.favoriteIds.includes(response.dreamRecord.dreamResultId),
       }
       this.currentRecord = record
       setCurrentRecord(record)
       return record
     },
     async toggleCurrentFavorite() {
-      if (!this.currentRecord) {
-        return
+      if (!this.currentRecord || typeof this.currentRecord.dreamResultId !== 'number') {
+        return false
       }
 
-      const shouldAdd = !this.favoriteIds.includes(this.currentRecord.dreamResultId)
-      const response = await toggleFavorite(this.currentRecord.dreamResultId, shouldAdd ? 'add' : 'remove')
+      const dreamResultId = this.currentRecord.dreamResultId
+      const shouldAdd = !this.favoriteIds.includes(dreamResultId)
+      const response = await toggleFavorite(dreamResultId, shouldAdd ? 'add' : 'remove')
       if (response.favorited) {
-        this.favoriteIds = Array.from(new Set([...this.favoriteIds, this.currentRecord.dreamResultId]))
+        this.favoriteIds = Array.from(new Set([...this.favoriteIds, dreamResultId]))
       } else {
-        this.favoriteIds = this.favoriteIds.filter((id) => id !== this.currentRecord?.dreamResultId)
+        this.favoriteIds = this.favoriteIds.filter((id) => id !== dreamResultId)
       }
       this.currentRecord = {
         ...this.currentRecord,
@@ -155,6 +158,7 @@ export const useDreamStore = defineStore('dream', {
       }
       setCurrentRecord(this.currentRecord)
       await this.loadFavorites()
+      return true
     },
     async loadFavorites() {
       this.favoriteIds = getFavoriteIds()

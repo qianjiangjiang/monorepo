@@ -112,8 +112,7 @@ public class DreamInterpretationService {
         Optional<JsonNode> cachedResult = dreamResultCacheService.get(dreamText, tags, school)
                 .map(dreamResultSanitizer::withDisclaimer);
         if (cachedResult.isPresent()) {
-            return persistInTransaction(userId, dreamText, tags, school, new AiOutcome(
-                    cachedResult.get(), "cache", "cache", "success", 0, 0, "cache"));
+            return cachedInterpretationResponse(userId, dreamText, tags, school, cachedResult.get());
         }
 
         dreamQuotaService.consumeDailyFreeQuota(userId);
@@ -193,7 +192,7 @@ public class DreamInterpretationService {
         DreamRecord record = new DreamRecord();
         record.setUserId(userId);
         record.setDreamText(dreamText);
-        record.setTags(tags.isEmpty() ? null : String.join(",", tags));
+        record.setTags(tagsValue(tags));
         dreamRecordMapper.insert(record);
 
         DreamResult result = new DreamResult();
@@ -209,6 +208,47 @@ public class DreamInterpretationService {
         dreamResultMapper.insert(result);
 
         return new DreamInterpretResponse(record.getId(), result.getId(), school, outcome.result());
+    }
+
+    private DreamInterpretResponse cachedInterpretationResponse(
+            Long userId,
+            String dreamText,
+            List<String> tags,
+            String school,
+            JsonNode cachedResult) {
+        return latestStoredInterpretation(userId, dreamText, tags, school)
+                .map(stored -> new DreamInterpretResponse(
+                        stored.record().getId(),
+                        stored.result().getId(),
+                        responseSchool(stored.result()),
+                        cachedResult))
+                .orElseGet(() -> new DreamInterpretResponse(null, null, school, cachedResult));
+    }
+
+    private Optional<StoredInterpretation> latestStoredInterpretation(
+            Long userId,
+            String dreamText,
+            List<String> tags,
+            String school) {
+        String tagsValue = tagsValue(tags);
+        var query = Wrappers.<DreamRecord>lambdaQuery()
+                .eq(DreamRecord::getUserId, userId)
+                .eq(DreamRecord::getDreamText, dreamText);
+        if (tagsValue == null) {
+            query.isNull(DreamRecord::getTags);
+        } else {
+            query.eq(DreamRecord::getTags, tagsValue);
+        }
+        query.orderByDesc(DreamRecord::getCreatedAt)
+                .orderByDesc(DreamRecord::getId);
+
+        for (DreamRecord record : dreamRecordMapper.selectList(query)) {
+            DreamResult result = latestResultForRecord(record.getId());
+            if (result != null && Objects.equals(responseSchool(result), school)) {
+                return Optional.of(new StoredInterpretation(record, result));
+            }
+        }
+        return Optional.empty();
     }
 
     private AiOutcome completeWithGuardrails(String dreamText, List<String> tags, PromptRenderer.RenderedPrompt prompt) {
@@ -425,6 +465,10 @@ public class DreamInterpretationService {
         return sanitized;
     }
 
+    private String tagsValue(List<String> tags) {
+        return tags.isEmpty() ? null : String.join(",", tags);
+    }
+
     private List<String> parseTags(String tags) {
         if (!StringUtils.hasText(tags)) {
             return List.of();
@@ -473,5 +517,8 @@ public class DreamInterpretationService {
             int tokenOut,
             String promptVersion
     ) {
+    }
+
+    private record StoredInterpretation(DreamRecord record, DreamResult result) {
     }
 }

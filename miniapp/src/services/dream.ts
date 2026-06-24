@@ -111,7 +111,7 @@ export async function getDreamDetail(id: number): Promise<DreamDetailResponse> {
   const record = ensureHistory().find((item) => item.dreamRecordId === id) || ensureHistory()[0]
   const decorated: DreamRecord = {
     ...record,
-    favorited: favorites.includes(record.dreamResultId),
+    favorited: typeof record.dreamResultId === 'number' && favorites.includes(record.dreamResultId),
   }
 
   return {
@@ -142,7 +142,7 @@ export async function toggleFavorite(dreamResultId: number, action: 'add' | 'rem
 
   const history = ensureHistory().map((record) => ({
     ...record,
-    favorited: ids.includes(record.dreamResultId),
+    favorited: typeof record.dreamResultId === 'number' && ids.includes(record.dreamResultId),
   }))
   setHistoryRecords(history)
 
@@ -161,7 +161,9 @@ export async function getFavoriteList(page = 1, size = 20): Promise<HistoryRespo
 
   await wait(160)
   const ids = getFavoriteIds()
-  const records = ensureHistory().filter((record) => ids.includes(record.dreamResultId))
+  const records = ensureHistory().filter(
+    (record) => typeof record.dreamResultId === 'number' && ids.includes(record.dreamResultId),
+  )
   const start = (page - 1) * size
   return {
     total: records.length,
