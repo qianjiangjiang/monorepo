@@ -12,7 +12,7 @@ spring:
 
 dream:
   jwt:
-    secret: replace-with-a-local-256-bit-secret
+    secret: replace-with-a-32-byte-jwt-secret
   wx:
     app-id: your-wechat-miniapp-app-id
     app-secret: your-wechat-miniapp-app-secret
@@ -25,7 +25,7 @@ dream:
     username: admin
     password: change-me
   ai:
-    encryption-key: replace-with-a-local-ai-config-secret
+    encryption-key: replace-with-a-32-byte-ai-encryption-key
     deepseek:
       base-url: https://api.deepseek.com
       api-key: ${DEEPSEEK_API_KEY:}

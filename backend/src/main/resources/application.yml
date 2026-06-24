@@ -36,7 +36,7 @@ mybatis-plus:
 dream:
   jwt:
     issuer: dream-miniapp
-    secret: ${DREAM_JWT_SECRET:local-dev-secret-change-me-at-least-32-bytes}
+    secret: ${DREAM_JWT_SECRET:}
     expiration: 30d
   wx:
     app-id: ${WECHAT_APP_ID:}
@@ -57,4 +57,4 @@ dream:
     default-window: 60s
   ai:
     default-provider: deepseek
-    encryption-key: ${DREAM_AI_CONFIG_SECRET:}
+    encryption-key: ${DREAM_AI_ENCRYPTION_KEY:${DREAM_AI_CONFIG_SECRET:}}

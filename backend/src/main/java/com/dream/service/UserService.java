@@ -1,6 +1,7 @@
 package com.dream.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.dream.common.auth.UserPrincipal;
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
 import com.dream.domain.User;
@@ -51,6 +52,7 @@ public class UserService {
         created.setOpenid(openid);
         created.setNickname("");
         created.setAvatar("");
+        created.setRole(UserPrincipal.ROLE_USER);
         userMapper.insert(created);
         return created;
     }
