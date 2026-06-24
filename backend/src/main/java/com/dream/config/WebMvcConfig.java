@@ -21,8 +21,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtAuthInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/wxLogin", "/api/health");
-        registry.addInterceptor(rateLimitInterceptor)
-                .addPathPatterns("/api/**");
+                .excludePathPatterns("/api/auth/wxLogin", "/api/auth/adminLogin", "/api/health");
     }
 }

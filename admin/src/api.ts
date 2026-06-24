@@ -26,6 +26,11 @@ export interface AiProviderConfig {
   weight: number
 }
 
+export interface AdminLoginResponse {
+  token: string
+  role: string
+}
+
 export interface AiProviderPayload {
   id?: number | null
   name: string
@@ -138,6 +143,13 @@ export function setToken(token: string) {
 
 export function clearToken() {
   window.localStorage.removeItem(TOKEN_KEY)
+}
+
+export async function adminLogin(username: string, password: string) {
+  return request<AdminLoginResponse>('/auth/adminLogin', {
+    method: 'POST',
+    body: { username, password },
+  })
 }
 
 export async function request<T>(path: string, options: AdminRequestInit = {}): Promise<T> {

@@ -18,6 +18,9 @@ import org.springframework.util.StringUtils;
 @Service
 public class JwtService {
 
+    private static final String ROLE_USER = "user";
+    private static final String ROLE_ADMIN = "admin";
+
     private final JwtProperties properties;
 
     public JwtService(JwtProperties properties) {
@@ -25,12 +28,21 @@ public class JwtService {
     }
 
     public String issueToken(Long userId, String openid) {
+        return issueToken(userId, openid, ROLE_USER);
+    }
+
+    public String issueAdminToken(String username) {
+        return issueToken(0L, username, ROLE_ADMIN);
+    }
+
+    private String issueToken(Long userId, String openid, String role) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(properties.getExpiration());
         return Jwts.builder()
                 .issuer(properties.getIssuer())
                 .subject(String.valueOf(userId))
                 .claim("openid", openid)
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .signWith(signingKey())
@@ -50,7 +62,8 @@ public class JwtService {
                     .getPayload();
             Long userId = Long.valueOf(claims.getSubject());
             String openid = claims.get("openid", String.class);
-            return new UserPrincipal(userId, openid);
+            String role = claims.get("role", String.class);
+            return new UserPrincipal(userId, openid, StringUtils.hasText(role) ? role : ROLE_USER);
         } catch (JwtException | IllegalArgumentException exception) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }

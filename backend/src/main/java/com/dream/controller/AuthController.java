@@ -2,6 +2,8 @@ package com.dream.controller;
 
 import com.dream.common.ApiResponse;
 import com.dream.common.ratelimit.RateLimited;
+import com.dream.controller.dto.AdminLoginRequest;
+import com.dream.controller.dto.AdminLoginResponse;
 import com.dream.controller.dto.WxLoginRequest;
 import com.dream.controller.dto.WxLoginResponse;
 import com.dream.service.AuthService;
@@ -25,5 +27,11 @@ public class AuthController {
     @PostMapping("/wxLogin")
     public ApiResponse<WxLoginResponse> wxLogin(@Valid @RequestBody WxLoginRequest request) {
         return ApiResponse.ok(authService.wxLogin(request.code()));
+    }
+
+    @RateLimited(keyPrefix = "rate:auth:admin-login", limit = 10, windowSeconds = 60)
+    @PostMapping("/adminLogin")
+    public ApiResponse<AdminLoginResponse> adminLogin(@Valid @RequestBody AdminLoginRequest request) {
+        return ApiResponse.ok(authService.adminLogin(request));
     }
 }

@@ -1,7 +1,7 @@
 # 接口契约（M0 冻结草案）
 
 - BasePath：`/api`
-- 鉴权：除 `wxLogin` 外均需 `Authorization: Bearer <JWT>`
+- 鉴权：除 `wxLogin` / `adminLogin` 外均需 `Authorization: Bearer <JWT>`
 - 统一返回体：
 
 ```json
@@ -16,6 +16,11 @@
 ### POST /api/auth/wxLogin
 请求：`{ "code": "<wx.login code>" }`
 响应 data：`{ "token": "<jwt>", "user": { "id":1, "nickname":"", "avatar":"" } }`
+
+### POST /api/auth/adminLogin
+请求：`{ "username": "<admin>", "password": "<password>" }`
+响应 data：`{ "token": "<admin jwt>", "role": "admin" }`
+说明：管理端使用该接口登录；后端通过 `dream.admin.username/password`（或 `DREAM_ADMIN_USERNAME/PASSWORD`）配置管理员账号。
 
 ## 2. 解梦
 
