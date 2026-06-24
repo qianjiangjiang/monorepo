@@ -1,5 +1,16 @@
 <script lang="ts">
-export default {}
+import { useDreamStore } from './stores/dream'
+
+export default {
+  onLaunch() {
+    // 小程序惯例：启动时静默登录，确保后续鉴权请求带得上 token。
+    // 失败时静默处理，具体动作会在调用前再兜底登录。
+    const store = useDreamStore()
+    if (!store.isLoggedIn) {
+      store.login().catch(() => {})
+    }
+  },
+}
 </script>
 
 <style lang="scss">

@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   application:
     name: dream-backend
   datasource:
@@ -41,7 +43,7 @@ dream:
   wx:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
-    mock-enabled: ${WECHAT_MOCK_ENABLED:false}
+    mock-enabled: ${WECHAT_MOCK_ENABLED:true}
     content-safety-enabled: ${WECHAT_CONTENT_SAFETY_ENABLED:true}
     code2-session-url: https://api.weixin.qq.com/sns/jscode2session
     access-token-url: https://api.weixin.qq.com/cgi-bin/token

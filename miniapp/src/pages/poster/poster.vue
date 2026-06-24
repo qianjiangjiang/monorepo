@@ -75,7 +75,11 @@ function drawPoster() {
   }
 
   drawing.value = true
+  // 旧版 canvas 的绘制坐标系 = 画布元素的逻辑像素尺寸；元素是 640rpx 宽，
+  // 在非 750px 宽的设备上 ≠ 640，按 upx2px 缩放，避免右半内容被裁切。
+  const renderScale = uni.upx2px(canvasWidth) / canvasWidth
   const ctx = uni.createCanvasContext(canvasId)
+  ctx.scale(renderScale, renderScale)
 
   ctx.setFillStyle('#1a1033')
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
@@ -160,8 +164,8 @@ function drawPoster() {
   ctx.draw(false, () => {
     uni.canvasToTempFilePath({
       canvasId,
-      width: canvasWidth,
-      height: canvasHeight,
+      width: uni.upx2px(canvasWidth),
+      height: uni.upx2px(canvasHeight),
       destWidth: canvasWidth * 2,
       destHeight: canvasHeight * 2,
       success: (response) => {

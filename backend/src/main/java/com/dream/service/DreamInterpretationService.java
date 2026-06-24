@@ -50,9 +50,17 @@ public class DreamInterpretationService {
     private static final Logger log = LoggerFactory.getLogger(DreamInterpretationService.class);
 
     private static final String DEFAULT_SCHEMA_HINT = """
-            Return only one JSON object with fields title, summary, overallTone, symbols, emotion,
-            interpretations, fortune, suggestions, and optional tags. interpretations must include
-            two entries whose school values are exactly 传统文化 and 心理学.
+            只返回一个 JSON 对象，且只能包含字段：title、summary、overallTone、symbols、emotion、
+            interpretations、fortune、suggestions，以及可选 tags；禁止出现其它字段。
+            - title: 非空字符串，不超过40字
+            - summary: 非空字符串，不超过60字
+            - overallTone: 只能是 positive/neutral/negative/mixed（小写英文）之一
+            - symbols: 对象数组，每项含 keyword、meaning、category（均为字符串）
+            - emotion: 对象，只能含 primary 和 description 两个非空字符串字段（禁止 joy/fear/score 等）
+            - interpretations: 非空对象数组，每项含 school 与 content；school 只能取 传统文化/心理学/现代象征；必须同时包含 传统文化 和 心理学
+            - fortune: 对象，只能含 tendency（非空字符串）与 disclaimer
+            - suggestions: 字符串数组
+            - tags: 可选字符串数组
             """;
 
     private final DreamRecordMapper dreamRecordMapper;
@@ -351,12 +359,33 @@ public class DreamInterpretationService {
     private PromptTemplate defaultPromptTemplate() {
         PromptTemplate template = new PromptTemplate();
         template.setSceneCode("interpret");
-        template.setVersion("builtin-v1");
+        template.setVersion("builtin-v2");
         template.setEnabled(true);
         template.setSystemPrompt("""
-                你是一个谨慎的梦境解读助手，融合传统文化象征和现代心理学视角。
-                你必须输出严格 JSON，不要输出 Markdown、解释文字或代码块。
+                你是谨慎的梦境解读助手，融合传统文化象征与现代心理学视角。
+                你必须只输出一个严格符合下述结构的 JSON 对象，不要输出 Markdown、解释文字或代码块。
                 不做绝对吉凶、医疗、法律、财务等现实断言。
+
+                JSON 结构（只能包含这些字段，禁止出现任何其他字段）：
+                {
+                  "title": "梦境主题，不超过40个字",
+                  "summary": "一句话概述，不超过60个字",
+                  "overallTone": "只能取其一：positive | neutral | negative | mixed",
+                  "symbols": [ { "keyword": "象征关键词", "meaning": "象征含义", "category": "分类" } ],
+                  "emotion": { "primary": "主要情绪(非空)", "description": "情绪说明(非空)" },
+                  "interpretations": [ { "school": "传统文化", "content": "解读" }, { "school": "心理学", "content": "解读" } ],
+                  "fortune": { "tendency": "倾向(非空)", "disclaimer": "免责声明" },
+                  "suggestions": [ "建议1", "建议2" ],
+                  "tags": [ "标签" ]
+                }
+
+                硬性规则：
+                1. overallTone 必须是 positive/neutral/negative/mixed 之一（小写英文），不要用中文。
+                2. emotion 只能有 primary 和 description 两个字段且均为非空字符串；禁止 joy、fear、score 等任何其它字段或情绪打分。
+                3. symbols 必须是对象数组，每个元素含 keyword、meaning、category，不要写成纯字符串数组。
+                4. interpretations 必须同时包含 school 为“传统文化”和“心理学”的两条；school 只能取“传统文化”“心理学”“现代象征”。
+                5. fortune 只能有 tendency 和 disclaimer 两个字段，tendency 非空。
+                6. title 不超过40字，summary 不超过60字；不要输出结构之外的任何字段。
                 """);
         template.setUserPromptTemplate("""
                 请解读以下梦境：
@@ -364,13 +393,8 @@ public class DreamInterpretationService {
 
                 流派展示偏好：{{school}}
 
-                输出要求：
-                1. 只输出一个 JSON 对象。
-                2. 字段必须符合 dream-result.schema.json。
-                3. interpretations 必须同时包含 school 为“传统文化”和“心理学”的两条，即使用户有具体展示偏好也不要省略任一视角。
-                4. 若展示偏好为具体流派，展示层会优先呈现该流派；模型仍需输出双视角完整结果。
-                5. fortune.disclaimer 固定表达为“%s”。
-                """.formatted(DreamResultSanitizer.DISCLAIMER));
+                只输出一个符合系统提示结构的 JSON 对象，interpretations 必须同时包含“传统文化”和“心理学”两条。
+                """);
         template.setSchemaJson(DEFAULT_SCHEMA_HINT);
         return template;
     }

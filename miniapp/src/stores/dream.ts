@@ -29,6 +29,10 @@ function normalizeSchool(school: string | null | undefined): '' | Interpretation
   return school === '传统文化' || school === '心理学' || school === '现代象征' ? school : ''
 }
 
+// 并发去重：onLaunch 静默登录与各动作兜底登录可能同时触发，
+// 共用同一个 Promise，避免重复 uni.login / wxLogin。
+let loginPromise: Promise<void> | null = null
+
 interface DreamState {
   token: string
   user: UserProfile | null
@@ -66,19 +70,34 @@ export const useDreamStore = defineStore('dream', {
       this.pendingPayload = payload
     },
     async login() {
-      const loginResult = await new Promise<UniApp.LoginRes>((resolve, reject) => {
-        uni.login({
-          provider: 'weixin',
-          success: resolve,
-          fail: reject,
-        })
-      }).catch(() => ({ code: `mock-code-${Date.now()}` }) as UniApp.LoginRes)
+      if (this.token) {
+        return
+      }
+      if (loginPromise) {
+        return loginPromise
+      }
 
-      const response = await wxLogin(loginResult.code)
-      this.token = response.token
-      this.user = response.user
-      setToken(response.token)
-      setUser(response.user)
+      loginPromise = (async () => {
+        const loginResult = await new Promise<UniApp.LoginRes>((resolve, reject) => {
+          uni.login({
+            provider: 'weixin',
+            success: resolve,
+            fail: reject,
+          })
+        }).catch(() => ({ code: `mock-code-${Date.now()}` }) as UniApp.LoginRes)
+
+        const response = await wxLogin(loginResult.code)
+        this.token = response.token
+        this.user = response.user
+        setToken(response.token)
+        setUser(response.user)
+      })()
+
+      try {
+        await loginPromise
+      } finally {
+        loginPromise = null
+      }
     },
     logout() {
       this.token = ''
@@ -97,6 +116,7 @@ export const useDreamStore = defineStore('dream', {
 
       this.loading = true
       try {
+        await this.login()
         const response = await interpretDream(this.pendingPayload)
         const record: DreamRecord = {
           dreamRecordId: response.dreamRecordId,
@@ -118,6 +138,7 @@ export const useDreamStore = defineStore('dream', {
       }
     },
     async loadHistory() {
+      await this.login()
       const response = await getHistory()
       this.history = response.list.map((record) => ({
         ...record,
@@ -126,6 +147,7 @@ export const useDreamStore = defineStore('dream', {
       }))
     },
     async loadDetail(id: number) {
+      await this.login()
       const response = await getDreamDetail(id)
       const record = {
         ...response.dreamRecord,
@@ -144,6 +166,7 @@ export const useDreamStore = defineStore('dream', {
         return false
       }
 
+      await this.login()
       const dreamResultId = this.currentRecord.dreamResultId
       const shouldAdd = !this.favoriteIds.includes(dreamResultId)
       const response = await toggleFavorite(dreamResultId, shouldAdd ? 'add' : 'remove')
@@ -161,6 +184,7 @@ export const useDreamStore = defineStore('dream', {
       return true
     },
     async loadFavorites() {
+      await this.login()
       this.favoriteIds = getFavoriteIds()
       const response = await getFavoriteList()
       this.favorites = response.list

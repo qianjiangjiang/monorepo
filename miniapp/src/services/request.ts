@@ -29,7 +29,18 @@ interface RequestOptions {
   timeout?: number
 }
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+function resolveApiBaseUrl() {
+  // #ifdef H5
+  // H5 开发环境走 vite dev server 代理（见 vite.config.ts 的 server.proxy），
+  // 以同源 /api 发起请求，规避浏览器跨域(CORS)。
+  if (import.meta.env.DEV) {
+    return '/api'
+  }
+  // #endif
+  return (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 let interceptorsReady = false
 
 function normalizeUrl(url: string) {

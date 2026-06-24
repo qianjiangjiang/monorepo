@@ -167,14 +167,17 @@ function goMine() {
 }
 
 .icon-button {
+  box-sizing: border-box;
   width: 72rpx;
   height: 72rpx;
+  padding: 0;
+  margin: 0;
   border: 1rpx solid rgba(255, 255, 255, 0.18);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   color: #fff7d6;
   font-size: 24rpx;
-  line-height: 72rpx;
+  line-height: 70rpx;
   text-align: center;
   letter-spacing: 0;
 }

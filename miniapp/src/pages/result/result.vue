@@ -60,8 +60,11 @@ function replay() {
         <button v-if="canFavorite" class="ghost-action action-button" hover-class="action-hover" @tap="toggleFavorite">
           {{ favoriteText }}
         </button>
+        <button class="secondary-action action-button" hover-class="action-hover" open-type="share">
+          转发
+        </button>
         <button class="secondary-action action-button" hover-class="action-hover" @tap="createPoster">
-          分享
+          海报
         </button>
         <button class="primary-action action-button" hover-class="action-hover" @tap="replay">
           再解一次
@@ -97,8 +100,8 @@ function replay() {
   bottom: calc(24rpx + env(safe-area-inset-bottom));
   z-index: 10;
   display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr;
-  gap: 14rpx;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
   padding: 18rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.16);
   border-radius: 8rpx;
@@ -108,12 +111,15 @@ function replay() {
 }
 
 .bottom-actions.without-favorite {
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .action-button {
+  box-sizing: border-box;
   min-height: 78rpx;
-  font-size: 26rpx;
+  padding: 0;
+  margin: 0;
+  font-size: 24rpx;
   line-height: 78rpx;
 }
 

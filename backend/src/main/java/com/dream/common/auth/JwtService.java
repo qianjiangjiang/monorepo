@@ -27,6 +27,10 @@ public class JwtService {
         this.properties = properties;
     }
 
+    public String issueAdminToken(String username) {
+        return issueToken(0L, username, UserPrincipal.ROLE_ADMIN);
+    }
+
     public String issueToken(Long userId, String openid, String role) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(properties.getExpiration());
