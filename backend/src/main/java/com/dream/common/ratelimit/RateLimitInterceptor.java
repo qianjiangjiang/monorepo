@@ -1,5 +1,7 @@
 package com.dream.common.ratelimit;
 
+import com.dream.common.auth.CurrentUserContext;
+import com.dream.common.auth.UserPrincipal;
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,6 +51,12 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     }
 
     private String buildKey(RateLimited rateLimited, HttpServletRequest request) {
+        if (rateLimited.byUser()) {
+            UserPrincipal principal = CurrentUserContext.get();
+            if (principal != null && principal.userId() != null) {
+                return rateLimited.keyPrefix() + ":user:" + principal.userId();
+            }
+        }
         if (!rateLimited.includeIp()) {
             return rateLimited.keyPrefix() + ":global";
         }

@@ -34,7 +34,7 @@ public class DreamController {
         this.dreamInterpretationService = dreamInterpretationService;
     }
 
-    @RateLimited(keyPrefix = "rate:dream:interpret", limit = 20, windowSeconds = 60)
+    @RateLimited(keyPrefix = "rate:dream:interpret", limit = 20, windowSeconds = 60, byUser = true)
     @PostMapping("/interpret")
     public ApiResponse<DreamInterpretResponse> interpret(@Valid @RequestBody DreamInterpretRequest request) {
         UserPrincipal principal = CurrentUserContext.require();

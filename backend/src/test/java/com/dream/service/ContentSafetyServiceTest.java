@@ -2,7 +2,6 @@ package com.dream.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -11,8 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.dream.common.exception.BusinessException;
 import com.dream.common.exception.ErrorCode;
-import com.dream.domain.SensitiveWord;
-import com.dream.mapper.SensitiveWordMapper;
 import com.dream.service.wechat.WechatClient;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ContentSafetyServiceTest {
 
     @Mock
-    private SensitiveWordMapper sensitiveWordMapper;
+    private SensitiveWordCache sensitiveWordCache;
 
     @Mock
     private WechatClient wechatClient;
@@ -35,9 +32,7 @@ class ContentSafetyServiceTest {
 
     @Test
     void blocksSensitiveWordsBeforeWechatCheck() {
-        SensitiveWord sensitiveWord = new SensitiveWord();
-        sensitiveWord.setWord("禁词");
-        when(sensitiveWordMapper.selectList(any())).thenReturn(List.of(sensitiveWord));
+        when(sensitiveWordCache.getWords()).thenReturn(List.of("禁词"));
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> contentSafetyService.checkInterpretRequest("openid", "梦到禁词", List.of(), ""));
@@ -48,7 +43,7 @@ class ContentSafetyServiceTest {
 
     @Test
     void delegatesCleanContentToWechatCheck() {
-        when(sensitiveWordMapper.selectList(any())).thenReturn(List.of());
+        when(sensitiveWordCache.getWords()).thenReturn(List.of());
 
         contentSafetyService.checkInterpretRequest("openid", "梦见月光", List.of("反复出现"), "心理学");
 
