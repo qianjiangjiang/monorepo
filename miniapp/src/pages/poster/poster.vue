@@ -10,6 +10,7 @@ const drawing = ref(false)
 const canvasId = 'dreamPosterCanvas'
 const canvasWidth = 640
 const canvasHeight = 900
+const fallbackDisclaimer = '解梦仅供自我觉察与娱乐参考，不构成现实判断或专业建议。'
 
 function drawRoundRect(ctx: UniApp.CanvasContext, x: number, y: number, width: number, height: number, radius: number) {
   ctx.beginPath()
@@ -151,10 +152,10 @@ function drawPoster() {
 
   ctx.setFillStyle('rgba(255,255,255,0.52)')
   ctx.setFontSize(22)
-  ctx.fillText('解梦仅供自我觉察与娱乐参考', 84, 776)
+  wrapText(ctx, result.fortune.disclaimer || fallbackDisclaimer, 84, 764, 472, 28, 2)
   ctx.setFillStyle('#f5d57a')
   ctx.setFontSize(26)
-  ctx.fillText('长按保存你的星空解梦卡片', 84, 812)
+  ctx.fillText('长按保存你的星空解梦卡片', 84, 840)
 
   ctx.draw(false, () => {
     uni.canvasToTempFilePath({
